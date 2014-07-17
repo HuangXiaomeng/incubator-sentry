@@ -228,6 +228,39 @@ public class TestSentryStore {
   }
 
   @Test
+  public void testGrantRevokePrivilegeWithGrantOption() throws Exception {
+    String roleName = "test-grantOption-privilege";
+    String grantor = "g1";
+    String server = "server1";
+    String db = "db1";
+    String table = "tbl1";
+    int grantOption = 1;
+    long seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
+    TSentryPrivilege privilege = new TSentryPrivilege();
+    privilege.setPrivilegeScope("TABLE");
+    privilege.setServerName(server);
+    privilege.setDbName(db);
+    privilege.setTableName(table);
+    privilege.setAction(AccessConstants.ALL);
+    privilege.setGrantorPrincipal(grantor);
+    privilege.setCreateTime(System.currentTimeMillis());
+    privilege.setPrivilegeName(SentryStore.constructPrivilegeName(privilege));
+    privilege.setGrantOption(grantOption);
+    assertEquals(seqId + 1, sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege)
+        .getSequenceId());
+    MSentryRole role = sentryStore.getMSentryRoleByName(roleName);
+    Set<MSentryPrivilege> privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 1, privileges.size());
+    assertEquals(privilege.getPrivilegeName(), Iterables.get(privileges, 0).getPrivilegeName());
+    assertEquals(privilege.getGrantOption(), Iterables.get(privileges, 0).getGrantOption());
+    assertEquals(seqId + 2, sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege)
+        .getSequenceId());
+    role = sentryStore.getMSentryRoleByName(roleName);
+    privileges = role.getPrivileges();
+    assertEquals(0, privileges.size());
+  }
+
+  @Test
   public void testListSentryPrivilegesForProvider() throws Exception {
     String roleName1 = "list-privs-r1", roleName2 = "list-privs-r2";
     String groupName1 = "list-privs-g1", groupName2 = "list-privs-g2";

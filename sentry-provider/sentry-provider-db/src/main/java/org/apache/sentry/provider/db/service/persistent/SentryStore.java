@@ -295,11 +295,9 @@ public class SentryStore {
         if (privilege.getAction().equalsIgnoreCase("*")) {
           TSentryPrivilege tNotAll = new TSentryPrivilege(privilege);
           tNotAll.setAction(AccessConstants.SELECT);
-          MSentryPrivilege mSelect = getMSentryPrivilege(
-              constructPrivilegeName(tNotAll), pm);
+          MSentryPrivilege mSelect = getMSentryPrivilege(tNotAll, pm);
           tNotAll.setAction(AccessConstants.INSERT);
-          MSentryPrivilege mInsert = getMSentryPrivilege(
-              constructPrivilegeName(tNotAll), pm);
+          MSentryPrivilege mInsert = getMSentryPrivilege(tNotAll, pm);
           if ((mSelect != null) && (mRole.getPrivileges().contains(mSelect))) {
             mSelect.removeRole(mRole);
             pm.makePersistent(mSelect);
@@ -313,16 +311,14 @@ public class SentryStore {
           // do nothing..
           TSentryPrivilege tAll = new TSentryPrivilege(privilege);
           tAll.setAction(AccessConstants.ALL);
-          MSentryPrivilege mAll = getMSentryPrivilege(
-              constructPrivilegeName(tAll), pm);
+          MSentryPrivilege mAll = getMSentryPrivilege(tAll, pm);
           if ((mAll != null) && (mRole.getPrivileges().contains(mAll))) {
             return;
           }
         }
       }
 
-      MSentryPrivilege mPrivilege = getMSentryPrivilege(
-          constructPrivilegeName(privilege), pm);
+      MSentryPrivilege mPrivilege = getMSentryPrivilege(privilege, pm);
       if (mPrivilege == null) {
         mPrivilege = convertToMSentryPrivilege(privilege);
       }
@@ -364,8 +360,7 @@ public class SentryStore {
       throw new SentryNoSuchObjectException("Role: " + roleName);
     } else {
       query = pm.newQuery(MSentryPrivilege.class);
-      MSentryPrivilege mPrivilege = getMSentryPrivilege(
-          constructPrivilegeName(tPrivilege), pm);
+      MSentryPrivilege mPrivilege = getMSentryPrivilege(tPrivilege, pm);
       if (mPrivilege == null) {
         mPrivilege = convertToMSentryPrivilege(tPrivilege);
       } else {
@@ -390,7 +385,7 @@ public class SentryStore {
   private void revokePartial(PersistenceManager pm,
       TSentryPrivilege requestedPrivToRevoke, MSentryRole mRole,
       MSentryPrivilege currentPrivilege) throws SentryInvalidInputException {
-    MSentryPrivilege persistedPriv = getMSentryPrivilege(constructPrivilegeName(convertToTSentryPrivilege(currentPrivilege)), pm);
+    MSentryPrivilege persistedPriv = getMSentryPrivilege(convertToTSentryPrivilege(currentPrivilege), pm);
     if (persistedPriv == null) {
       persistedPriv = convertToMSentryPrivilege(convertToTSentryPrivilege(currentPrivilege));
     }
@@ -415,13 +410,13 @@ public class SentryStore {
     pm.makePersistent(persistedPriv);
 
     currentPrivilege.setAction(AccessConstants.ALL);
-    persistedPriv = getMSentryPrivilege(constructPrivilegeName(convertToTSentryPrivilege(currentPrivilege)), pm);
+    persistedPriv = getMSentryPrivilege(convertToTSentryPrivilege(currentPrivilege), pm);
     if ((persistedPriv != null)&&(mRole.getPrivileges().contains(persistedPriv))) {
       persistedPriv.removeRole(mRole);
       pm.makePersistent(persistedPriv);
 
       currentPrivilege.setAction(addAction);
-      persistedPriv = getMSentryPrivilege(constructPrivilegeName(convertToTSentryPrivilege(currentPrivilege)), pm);
+      persistedPriv = getMSentryPrivilege(convertToTSentryPrivilege(currentPrivilege), pm);
       if (persistedPriv == null) {
         persistedPriv = convertToMSentryPrivilege(convertToTSentryPrivilege(currentPrivilege));
         mRole.appendPrivilege(persistedPriv);
@@ -501,12 +496,16 @@ public class SentryStore {
     }
   }
 
-  private MSentryPrivilege getMSentryPrivilege(String privilegeName, PersistenceManager pm) {
+  private MSentryPrivilege getMSentryPrivilege(TSentryPrivilege privilege, PersistenceManager pm)
+	  throws SentryInvalidInputException {
+    String privilegeName = constructPrivilegeName(privilege);
+    int grantOption = privilege.getGrantOption();
+    String grantorPrincipal = privilege.getGrantorPrincipal();
     Query query = pm.newQuery(MSentryPrivilege.class);
-    query.setFilter("this.privilegeName == t");
-    query.declareParameters("java.lang.String t");
+    query.setFilter("this.privilegeName == privilegeName && this.grantOption == grantOption ");
+    query.declareParameters("String privilegeName, int grantOption");
     query.setUnique(true);
-    Object obj = query.execute(privilegeName);
+    Object obj = query.execute(privilegeName, grantOption);
     if (obj != null)
       return (MSentryPrivilege) obj;
     return null;
@@ -1095,6 +1094,7 @@ public class SentryStore {
     privilege.setTableName(mSentryPrivilege.getTableName());
     privilege.setURI(mSentryPrivilege.getURI());
     privilege.setGrantorPrincipal(mSentryPrivilege.getGrantorPrincipal());
+    privilege.setGrantOption(mSentryPrivilege.getGrantOption());
     return privilege;
   }
 
@@ -1115,6 +1115,7 @@ public class SentryStore {
     mSentryPrivilege.setGrantorPrincipal(safeTrim(privilege.getGrantorPrincipal()));
     mSentryPrivilege.setURI(safeTrim(privilege.getURI()));
     mSentryPrivilege.setPrivilegeName(constructPrivilegeName(privilege));
+    mSentryPrivilege.setGrantOption(privilege.getGrantOption());
     return mSentryPrivilege;
   }
   private static String safeTrim(String s) {
@@ -1314,8 +1315,7 @@ public class SentryStore {
     HashSet<MSentryRole> roleSet = Sets.newHashSet();
     tPrivilege.setPrivilegeName(constructPrivilegeName(tPrivilege));
 
-    MSentryPrivilege mPrivilege = getMSentryPrivilege(
-        tPrivilege.getPrivilegeName(), pm);
+    MSentryPrivilege mPrivilege = getMSentryPrivilege(tPrivilege, pm);
     if (mPrivilege != null) {
       roleSet.addAll(ImmutableSet.copyOf((mPrivilege.getRoles())));
     }
