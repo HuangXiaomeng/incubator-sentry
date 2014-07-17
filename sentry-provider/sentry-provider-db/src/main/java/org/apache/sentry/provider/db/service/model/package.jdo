@@ -89,7 +89,6 @@
       </datastore-identity>
       <field name="privilegeName">  
         <column name="PRIVILEGE_NAME" length="4000" jdbc-type="VARCHAR"/>
-        <index name="SentryPrivilegeName" unique="true"/>
       </field>
       <field name="privilegeScope">  
         <column name="PRIVILEGE_SCOPE" length="40" jdbc-type="VARCHAR"/>
@@ -115,9 +114,17 @@
       <field name="grantorPrincipal">  
         <column name="GRANTOR_PRINCIPAL" length="4000" jdbc-type="VARCHAR"/>
       </field>
+      <field name="grantOption">
+        <column name="WITH_GRANT_OPTION" jdbc-type="INT"/>
+      </field>
       <field name="roles" mapped-by="privileges">
          <collection element-type="org.apache.sentry.provider.db.service.model.MSentryRole"/>
-      </field>  
+      </field>
+      <index name="SentryPrivilegeIndex">
+        <field name="privilegeName"/>
+        <field name="grantOption"/>
+        <field name="grantorPrincipal"/>
+      </index>
     </class>
     <class name="MSentryVersion" table="SENTRY_VERSION" identity-type="datastore" detachable="true">
       <datastore-identity>
