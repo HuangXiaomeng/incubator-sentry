@@ -40,7 +40,8 @@ struct TSentryPrivilege {
 6: optional string URI,
 7: required string action,
 8: optional i64 createTime, # Set on server side
-9: optional string grantorPrincipal # Set on server side
+9: optional string grantorPrincipal, # Set on server side
+10: optional i32 grantOption
 }
 
 # TODO can this be deleted? it's not adding value to TAlterSentryRoleAddGroupsRequest
