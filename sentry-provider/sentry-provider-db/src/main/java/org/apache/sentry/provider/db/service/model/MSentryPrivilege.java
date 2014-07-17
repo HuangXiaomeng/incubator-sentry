@@ -32,7 +32,7 @@ public class MSentryPrivilege {
 
   private String privilegeScope;
   /**
-   * index name="SentryPrivilegeIndex", members={"privilegeName", "grantOption", "grantorPrincipal"}
+   * index name="SentryPrivilegeIndex", members={"privilegeName", "grantOption"}
    */
   private String privilegeName;
   private String serverName;
@@ -200,11 +200,6 @@ public class MSentryPrivilege {
     if (grantOption != other.grantOption) {
       return false;
     }
-    if (grantorPrincipal == null) {
-      if (other.grantorPrincipal != null)
-        return false;
-    } else if (!grantorPrincipal.equals(other.grantorPrincipal))
-      return false;
     return true;
   }
 }

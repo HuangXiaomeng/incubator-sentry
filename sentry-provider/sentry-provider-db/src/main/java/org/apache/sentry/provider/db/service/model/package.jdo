@@ -123,7 +123,6 @@
       <index name="SentryPrivilegeIndex">
         <field name="privilegeName"/>
         <field name="grantOption"/>
-        <field name="grantorPrincipal"/>
       </index>
     </class>
     <class name="MSentryVersion" table="SENTRY_VERSION" identity-type="datastore" detachable="true">
