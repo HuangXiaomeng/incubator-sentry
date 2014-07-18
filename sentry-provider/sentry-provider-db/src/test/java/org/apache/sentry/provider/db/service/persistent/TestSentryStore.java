@@ -277,7 +277,7 @@ public class TestSentryStore {
   @Test
   public void testGrantCheckWithGrantOption() throws Exception {
     // 1. add a role grant_check_adminRole to adminGroups
-    String roleName = "grant_check_adminRole";
+    String roleName = "adminRole";
     String grantor = "g1";
     String server = "server1";
     String db = "db1";
@@ -291,8 +291,8 @@ public class TestSentryStore {
         roleName, groups).getSequenceId());
 
     // 2. adminRole grant all on database db1 to user user1, with grant option
-    roleName = "grant_check_user1";
-    grantor = "grant_check_adminRole";
+    roleName = "user1";
+    grantor = "adminRole";
     seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
     TSentryPrivilege privilege1 = new TSentryPrivilege();
     privilege1.setPrivilegeScope("DATABASE");
@@ -311,8 +311,8 @@ public class TestSentryStore {
     assertEquals(privilege1.getPrivilegeName(), Iterables.get(privileges, 0).getPrivilegeName());
 
     // 3. user1 grant select on database db1 to user user2, with grant option
-    roleName = "grant_check_user2";
-    grantor = "grant_check_user1";
+    roleName = "user2";
+    grantor = "user1";
     seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
     TSentryPrivilege privilege2 = new TSentryPrivilege();
     privilege2.setPrivilegeScope("DATABASE");
@@ -327,8 +327,8 @@ public class TestSentryStore {
         .getSequenceId());
 
     // 4. user1 grant all on table tb1 to user user3, no grant option
-    roleName = "grant_check_user3";
-    grantor = "grant_check_user1";
+    roleName = "user3";
+    grantor = "user1";
     seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
     TSentryPrivilege privilege3 = new TSentryPrivilege();
     privilege3.setPrivilegeScope("TABLE");
@@ -345,8 +345,8 @@ public class TestSentryStore {
 
     // 5. user2 don't have insert privilege,
     // grant insert to user4, will throw no grant exception
-    roleName = "grant_check_user4";
-    grantor = "grant_check_user2";
+    roleName = "user4";
+    grantor = "user2";
     seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
     TSentryPrivilege privilege4 = new TSentryPrivilege();
     privilege4.setPrivilegeScope("DATABASE");
@@ -368,8 +368,8 @@ public class TestSentryStore {
 
     // 6. user3 have no grant option,
     // grant select to user5, will throw no grant exception
-    roleName = "grant_check_user5";
-    grantor = "grant_check_user3";
+    roleName = "user5";
+    grantor = "user3";
     seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
     TSentryPrivilege privilege5 = new TSentryPrivilege();
     privilege5.setPrivilegeScope("TABLE");

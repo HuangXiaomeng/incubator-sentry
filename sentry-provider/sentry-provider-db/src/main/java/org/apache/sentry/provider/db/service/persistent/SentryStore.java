@@ -336,7 +336,7 @@ public class SentryStore {
   }
 
   public CommitContext alterSentryRoleRevokePrivilege(String roleName, TSentryPrivilege tPrivilege)
-      throws SentryNoSuchObjectException, SentryInvalidInputException, SentryNoGrantOpitonException {
+      throws SentryNoSuchObjectException, SentryInvalidInputException {
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     roleName = safeTrimLower(roleName);
