@@ -43,6 +43,10 @@ public class TestSentryServiceFailureCase extends SentryServiceIntegrationBase {
     afterSetup();
   }
 
+  @Override
+  public void afterSetup() throws Exception {
+  }
+
   @Test
   public void testClientServerConnectionFailure()  throws Exception {
     try {

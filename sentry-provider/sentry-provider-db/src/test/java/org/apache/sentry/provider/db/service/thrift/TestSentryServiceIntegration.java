@@ -43,6 +43,7 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
     client.createRole(requestorUserName, roleName);
 
     Set<TSentryRole> roles = client.listRoles(requestorUserName);
+    // 2 roles: ADMIN_USER + admin_r
     assertEquals("Incorrect number of roles", 2, roles.size());
 
     Set<String> roleNames = Sets.newHashSet();
