@@ -46,9 +46,6 @@ public class TestSentryServerWithoutKerberos extends SentryServiceIntegrationBas
   @Test
   public void testCreateRole() throws Exception {
     String requestorUserName = ADMIN_USER;
-    Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
-    setLocalGroupMapping(requestorUserName, requestorUserGroupNames);
-    writePolicyFile();
     String roleName = "admin_r";
     client.dropRoleIfExists(requestorUserName, roleName);
     client.createRole(requestorUserName, roleName);
@@ -58,9 +55,6 @@ public class TestSentryServerWithoutKerberos extends SentryServiceIntegrationBas
   @Test
   public void testQueryPushDown() throws Exception {
     String requestorUserName = ADMIN_USER;
-    Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
-    setLocalGroupMapping(requestorUserName, requestorUserGroupNames);
-    writePolicyFile();
 
     String roleName1 = "admin_r1";
     String roleName2 = "admin_r2";
@@ -128,8 +122,6 @@ public class TestSentryServerWithoutKerberos extends SentryServiceIntegrationBas
   public void testDropRole() throws Exception {
     String requestorUserName = ADMIN_USER;
     Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
-    setLocalGroupMapping(requestorUserName, requestorUserGroupNames);
-    writePolicyFile();
     String roleName = "admin_r";
 
     // create role and add privileges

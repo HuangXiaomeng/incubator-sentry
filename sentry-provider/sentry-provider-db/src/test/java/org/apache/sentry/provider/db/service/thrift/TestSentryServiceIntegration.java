@@ -36,21 +36,21 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
   @Test
   public void testCreateDropShowRole() throws Exception {
     String requestorUserName = ADMIN_USER;
-    Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
     String roleName = "admin_r";
-    setLocalGroupMapping(requestorUserName, requestorUserGroupNames);
-    writePolicyFile();
 
     client.dropRoleIfExists(requestorUserName, roleName);
 
     client.createRole(requestorUserName, roleName);
 
     Set<TSentryRole> roles = client.listRoles(requestorUserName);
-    assertEquals("Incorrect number of roles", 1, roles.size());
+    assertEquals("Incorrect number of roles", 2, roles.size());
 
-    for (TSentryRole role:roles) {
-      assertTrue(role.getRoleName(), role.getRoleName().equalsIgnoreCase(roleName));
+    Set<String> roleNames = Sets.newHashSet();
+    for (TSentryRole role: roles) {
+      roleNames.add(role.getRoleName());
     }
+    assertTrue(roleNames.contains((roleName)));
+
     client.dropRole(requestorUserName, roleName);
   }
 
@@ -58,9 +58,6 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
   @Test
   public void testGranRevokePrivilegeOnTableForRole() throws Exception {
     String requestorUserName = ADMIN_USER;
-    Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
-    setLocalGroupMapping(requestorUserName, requestorUserGroupNames);
-    writePolicyFile();
     String roleName1 = "admin_r1";
     String roleName2 = "admin_r2";
 
@@ -116,9 +113,6 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
   @Test
   public void testMultipleRolesSamePrivilege() throws Exception {
     String requestorUserName = ADMIN_USER;
-    Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
-    setLocalGroupMapping(requestorUserName, requestorUserGroupNames);
-    writePolicyFile();
     String roleName1 = "admin_r1";
     String roleName2 = "admin_r2";
 
@@ -141,17 +135,14 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
   @Test
   public void testShowRoleGrant() throws Exception {
     String requestorUserName = ADMIN_USER;
-    Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
     String roleName = "admin_testdb";
     String groupName = "group1";
-    setLocalGroupMapping(requestorUserName, requestorUserGroupNames);
-    writePolicyFile();
 
     client.dropRoleIfExists(requestorUserName, roleName);
     client.createRole(requestorUserName, roleName);
 
     Set<TSentryRole> roles = client.listRoles(requestorUserName);
-    assertEquals("Incorrect number of roles", 1, roles.size());
+    assertEquals("Incorrect number of roles", 2, roles.size());
 
     client.grantRoleToGroup(requestorUserName, groupName, roleName);
     Set<TSentryRole> groupRoles = client.listRolesByGroupName(requestorUserName, groupName);
@@ -170,18 +161,15 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
   @Test
   public void testShowGrant() throws Exception {
     String requestorUserName = ADMIN_USER;
-    Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
     String roleName = "admin_testdb";
     String server = "server1";
     String db = "testDB";
-    setLocalGroupMapping(requestorUserName, requestorUserGroupNames);
-    writePolicyFile();
 
     client.dropRoleIfExists(requestorUserName, roleName);
     client.createRole(requestorUserName, roleName);
 
     Set<TSentryRole> roles = client.listRoles(requestorUserName);
-    assertEquals("Incorrect number of roles", 1, roles.size());
+    assertEquals("Incorrect number of roles", 2, roles.size());
 
     client.grantDatabasePrivilege(requestorUserName, roleName, server, db, AccessConstants.ALL);
     Set<TSentryPrivilege> privileges = client.listAllPrivilegesByRoleName(requestorUserName, roleName);
@@ -199,18 +187,15 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
   @Test
   public void testUriWithEquals() throws Exception {
     String requestorUserName = ADMIN_USER;
-    Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
     String roleName = "admin_testdb";
     String server = "server1";
     String uri = "file://u/w/h/t/partition=value/";
-    setLocalGroupMapping(requestorUserName, requestorUserGroupNames);
-    writePolicyFile();
 
     // Creating associated role
     client.dropRoleIfExists(requestorUserName, roleName);
     client.createRole(requestorUserName, roleName);
     Set<TSentryRole> roles = client.listRoles(requestorUserName);
-    assertEquals("Incorrect number of roles", 1, roles.size());
+    assertEquals("Incorrect number of roles", 2, roles.size());
 
     client.grantURIPrivilege(requestorUserName, roleName, server, uri);
     Set<TSentryPrivilege> privileges = client.listAllPrivilegesByRoleName(requestorUserName, roleName);
@@ -229,9 +214,6 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
   @Test
   public void testSameGrantTwice() throws Exception {
     String requestorUserName = ADMIN_USER;
-    Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
-    setLocalGroupMapping(requestorUserName, requestorUserGroupNames);
-    writePolicyFile();
     String roleName = "admin_r1";
 
     client.createRole(requestorUserName, roleName);

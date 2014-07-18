@@ -67,7 +67,7 @@ public class TestSentryStore {
 
     String adminRole = "g1";
     String grantor = "g1";
-    sentryStore.createSentryRole(adminRole, grantor).getSequenceId();
+    sentryStore.createSentryRole(adminRole, grantor);
     Set<TSentryGroup> groups = Sets.newHashSet();
     TSentryGroup group = new TSentryGroup();
     group.setGroupName(adminGroups[0]);
