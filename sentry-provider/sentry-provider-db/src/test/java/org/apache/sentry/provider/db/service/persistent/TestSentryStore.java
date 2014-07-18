@@ -32,6 +32,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.provider.db.SentryAlreadyExistsException;
+import org.apache.sentry.provider.db.SentryNoGrantOpitonException;
 import org.apache.sentry.provider.db.SentryNoSuchObjectException;
 import org.apache.sentry.provider.db.service.model.MSentryPrivilege;
 import org.apache.sentry.provider.db.service.model.MSentryRole;
@@ -52,6 +53,7 @@ public class TestSentryStore {
 
   private File dataDir;
   private SentryStore sentryStore;
+  private String[] adminGroups = {"adminGroup1"};
 
   @Before
   public void setup() throws Exception {
@@ -60,7 +62,17 @@ public class TestSentryStore {
     conf.set(ServerConfig.SENTRY_VERIFY_SCHEM_VERSION, "false");
     conf.set(ServerConfig.SENTRY_STORE_JDBC_URL,
         "jdbc:derby:;databaseName=" + dataDir.getPath() + ";create=true");
+    conf.setStrings(ServerConfig.ADMIN_GROUPS, adminGroups);
     sentryStore = new SentryStore(conf);
+
+    String adminRole = "g1";
+    String grantor = "g1";
+    sentryStore.createSentryRole(adminRole, grantor).getSequenceId();
+    Set<TSentryGroup> groups = Sets.newHashSet();
+    TSentryGroup group = new TSentryGroup();
+    group.setGroupName(adminGroups[0]);
+    groups.add(group);
+    sentryStore.alterSentryRoleAddGroups(grantor, adminRole, groups);
   }
 
   @After
@@ -106,6 +118,7 @@ public class TestSentryStore {
     TSentryPrivilege tSentryPrivilege = new TSentryPrivilege("URI", "server1", "ALL");
     tSentryPrivilege.setURI(uri);
     tSentryPrivilege.setPrivilegeName(SentryStore.constructPrivilegeName(tSentryPrivilege));
+    tSentryPrivilege.setGrantorPrincipal(grantor);
     sentryStore.alterSentryRoleGrantPrivilege(roleName, tSentryPrivilege);
 
     TSentryAuthorizable tSentryAuthorizable = new TSentryAuthorizable();
@@ -150,6 +163,7 @@ public class TestSentryStore {
     long seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
     TSentryPrivilege sentryPrivilege = new TSentryPrivilege("Database", "server1", "all");
     sentryPrivilege.setDbName("db1");
+    sentryPrivilege.setGrantorPrincipal(grantor);
     assertEquals(seqId + 1, sentryStore.alterSentryRoleGrantPrivilege(roleName, sentryPrivilege).getSequenceId());
   }
   @Test
@@ -258,6 +272,123 @@ public class TestSentryStore {
     role = sentryStore.getMSentryRoleByName(roleName);
     privileges = role.getPrivileges();
     assertEquals(0, privileges.size());
+  }
+
+  @Test
+  public void testGrantCheckWithGrantOption() throws Exception {
+    // 1. add a role grant_check_adminRole to adminGroups
+    String roleName = "grant_check_adminRole";
+    String grantor = "g1";
+    String server = "server1";
+    String db = "db1";
+    String table = "tbl1";
+    long seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
+    Set<TSentryGroup> groups = Sets.newHashSet();
+    TSentryGroup group = new TSentryGroup();
+    group.setGroupName(adminGroups[0]);
+    groups.add(group);
+    assertEquals(seqId + 1, sentryStore.alterSentryRoleAddGroups(grantor,
+        roleName, groups).getSequenceId());
+
+    // 2. adminRole grant all on database db1 to user user1, with grant option
+    roleName = "grant_check_user1";
+    grantor = "grant_check_adminRole";
+    seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
+    TSentryPrivilege privilege1 = new TSentryPrivilege();
+    privilege1.setPrivilegeScope("DATABASE");
+    privilege1.setServerName(server);
+    privilege1.setDbName(db);
+    privilege1.setAction(AccessConstants.ALL);
+    privilege1.setGrantorPrincipal(grantor);
+    privilege1.setCreateTime(System.currentTimeMillis());
+    privilege1.setPrivilegeName(SentryStore.constructPrivilegeName(privilege1));
+    privilege1.setGrantOption(1);
+    assertEquals(seqId + 1, sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege1)
+        .getSequenceId());
+    MSentryRole role = sentryStore.getMSentryRoleByName(roleName);
+    Set<MSentryPrivilege> privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 1, privileges.size());
+    assertEquals(privilege1.getPrivilegeName(), Iterables.get(privileges, 0).getPrivilegeName());
+
+    // 3. user1 grant select on database db1 to user user2, with grant option
+    roleName = "grant_check_user2";
+    grantor = "grant_check_user1";
+    seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
+    TSentryPrivilege privilege2 = new TSentryPrivilege();
+    privilege2.setPrivilegeScope("DATABASE");
+    privilege2.setServerName(server);
+    privilege2.setDbName(db);
+    privilege2.setAction(AccessConstants.SELECT);
+    privilege2.setGrantorPrincipal(grantor);
+    privilege2.setCreateTime(System.currentTimeMillis());
+    privilege2.setPrivilegeName(SentryStore.constructPrivilegeName(privilege2));
+    privilege2.setGrantOption(1);
+    assertEquals(seqId + 1, sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege2)
+        .getSequenceId());
+
+    // 4. user1 grant all on table tb1 to user user3, no grant option
+    roleName = "grant_check_user3";
+    grantor = "grant_check_user1";
+    seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
+    TSentryPrivilege privilege3 = new TSentryPrivilege();
+    privilege3.setPrivilegeScope("TABLE");
+    privilege3.setServerName(server);
+    privilege3.setDbName(db);
+    privilege3.setTableName(table);
+    privilege3.setAction(AccessConstants.ALL);
+    privilege3.setGrantorPrincipal(grantor);
+    privilege3.setCreateTime(System.currentTimeMillis());
+    privilege3.setPrivilegeName(SentryStore.constructPrivilegeName(privilege3));
+    privilege3.setGrantOption(0);
+    assertEquals(seqId + 1, sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege3)
+        .getSequenceId());
+
+    // 5. user2 don't have insert privilege,
+    // grant insert to user4, will throw no grant exception
+    roleName = "grant_check_user4";
+    grantor = "grant_check_user2";
+    seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
+    TSentryPrivilege privilege4 = new TSentryPrivilege();
+    privilege4.setPrivilegeScope("DATABASE");
+    privilege4.setServerName(server);
+    privilege4.setDbName(db);
+    privilege4.setAction(AccessConstants.INSERT);
+    privilege4.setGrantorPrincipal(grantor);
+    privilege4.setCreateTime(System.currentTimeMillis());
+    privilege4.setPrivilegeName(SentryStore.constructPrivilegeName(privilege4));
+    privilege4.setGrantOption(0);
+    boolean isGrantOptionException = false;
+    try {
+      sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege4);
+    } catch (SentryNoGrantOpitonException e) {
+      isGrantOptionException = true;
+      System.err.println(e.getMessage());
+    }
+    assertTrue(isGrantOptionException);
+
+    // 6. user3 have no grant option,
+    // grant select to user5, will throw no grant exception
+    roleName = "grant_check_user5";
+    grantor = "grant_check_user3";
+    seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
+    TSentryPrivilege privilege5 = new TSentryPrivilege();
+    privilege5.setPrivilegeScope("TABLE");
+    privilege5.setServerName(server);
+    privilege5.setDbName(db);
+    privilege5.setTableName(table);
+    privilege5.setAction(AccessConstants.INSERT);
+    privilege5.setGrantorPrincipal(grantor);
+    privilege5.setCreateTime(System.currentTimeMillis());
+    privilege5.setPrivilegeName(SentryStore.constructPrivilegeName(privilege5));
+    privilege5.setGrantOption(0);
+    isGrantOptionException = false;
+    try {
+      sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege5);
+    } catch (SentryNoGrantOpitonException e) {
+      isGrantOptionException = true;
+      System.err.println(e.getMessage());
+    }
+    assertTrue(isGrantOptionException);
   }
 
   @Test
