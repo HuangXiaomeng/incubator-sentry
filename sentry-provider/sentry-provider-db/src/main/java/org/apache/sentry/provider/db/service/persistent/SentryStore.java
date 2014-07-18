@@ -500,7 +500,6 @@ public class SentryStore {
 	  throws SentryInvalidInputException {
     String privilegeName = constructPrivilegeName(privilege);
     int grantOption = privilege.getGrantOption();
-    String grantorPrincipal = privilege.getGrantorPrincipal();
     Query query = pm.newQuery(MSentryPrivilege.class);
     query.setFilter("this.privilegeName == privilegeName && this.grantOption == grantOption ");
     query.declareParameters("String privilegeName, int grantOption");
