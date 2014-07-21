@@ -144,11 +144,11 @@ public class MSentryPrivilege {
   }
 
   public int getGrantOption() {
-	return grantOption;
+    return grantOption;
   }
 
   public void setGrantOption(int grantOption) {
-  	this.grantOption = grantOption;
+    this.grantOption = grantOption;
   }
 
   public void appendRole(MSentryRole role) {
