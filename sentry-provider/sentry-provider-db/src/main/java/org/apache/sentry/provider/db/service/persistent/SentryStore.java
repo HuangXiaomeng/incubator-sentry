@@ -89,6 +89,7 @@ public class SentryStore {
   private long commitSequenceId;
   private final PersistenceManagerFactory pmf;
   private Configuration conf;
+  public static final String PRIVILEGE_NAME_SPLITTER = "+";
 
   public SentryStore(Configuration conf) throws SentryNoSuchObjectException,
   SentryAccessDeniedException {
@@ -335,13 +336,16 @@ public class SentryStore {
     return;
   }
 
-  public CommitContext alterSentryRoleRevokePrivilege(String roleName,
-      TSentryPrivilege tPrivilege) throws SentryNoSuchObjectException, SentryInvalidInputException {
+  public CommitContext alterSentryRoleRevokePrivilege(String roleName, TSentryPrivilege tPrivilege)
+      throws SentryNoSuchObjectException, SentryInvalidInputException, SentryNoGrantOpitonException {
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     roleName = safeTrimLower(roleName);
     try {
       pm = openTransaction();
+      // first do revoke check
+      grantOptionCheck(pm, tPrivilege);
+
       alterSentryRoleRevokePrivilegeCore(pm, roleName, tPrivilege);
 
       CommitContext commit = commitUpdateTransaction(pm);
@@ -578,18 +582,18 @@ public class SentryStore {
 
     if (uri == null || uri.equals("")) {
       privilegeName.append(serverName);
-      privilegeName.append("+");
+      privilegeName.append(PRIVILEGE_NAME_SPLITTER);
       privilegeName.append(dbName);
 
       if (tableName != null && !tableName.equals("")) {
-        privilegeName.append("+");
+        privilegeName.append(PRIVILEGE_NAME_SPLITTER);
         privilegeName.append(tableName);
       }
-      privilegeName.append("+");
+      privilegeName.append(PRIVILEGE_NAME_SPLITTER);
       privilegeName.append(action);
     } else {
       privilegeName.append(serverName);
-      privilegeName.append("+");
+      privilegeName.append(PRIVILEGE_NAME_SPLITTER);
       privilegeName.append(uri);
     }
     return privilegeName.toString();
@@ -1401,7 +1405,7 @@ public class SentryStore {
           if (p.getGrantOption() > 0 &&
               // high priority can grant low priority
               p.getGrantOption() >= mPri.getGrantOption() &&
-              p.hasChildPrivilege(mPri, "\\+")) {
+              p.hasChildPrivilege(mPri, "\\" + PRIVILEGE_NAME_SPLITTER)) {
             hasGrant = true;
             break;
           }
