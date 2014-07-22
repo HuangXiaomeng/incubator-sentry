@@ -498,7 +498,7 @@ public class TestSentryStore {
 
   @Test
   public void testRevokeAllGrantOption() throws Exception {
-    // 1. add a role revoke_check_adminRole to adminGroups
+    // 1. add a role revoke_all_grant_adminRole to adminGroups
     String roleName = "revoke_all_grant_adminRole";
     String grantor = "g1";
     String server = "server1";
