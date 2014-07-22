@@ -225,7 +225,7 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
 
   @Test
   public void testGrantRevokeWithGrantOption() throws Exception {
-    //grant a privilege with Grant Option
+    // Grant a privilege with Grant Option
     String requestorUserName = ADMIN_USER;
     String roleName1 = "admin_r1";
     int grantOption = 1;
@@ -236,11 +236,11 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
     client.grantTablePrivilege(requestorUserName, roleName1, "server", "db1", "table1", "ALL", grantOption);
     assertEquals(1, client.listAllPrivilegesByRoleName(requestorUserName, roleName1).size());
 
-    //revoke the privilege
+    // Try to revoke the privilege without grantOption and can't revoke the privilege.
     client.revokeTablePrivilege(requestorUserName, roleName1, "server", "db1", "table1", "ALL", withoutGrantOption);
     assertEquals(1, client.listAllPrivilegesByRoleName(requestorUserName, roleName1).size());
 
-    //revoke the privilege
+    // Try to revoke the privilege with grantOption, the privilege will be revoked.
     client.revokeTablePrivilege(requestorUserName, roleName1, "server", "db1", "table1", "ALL", grantOption);
     assertEquals(0, client.listAllPrivilegesByRoleName(requestorUserName, roleName1).size());
 
@@ -248,7 +248,7 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
 
   @Test
   public void testGrantTwoPrivilegeDiffInGrantOption() throws Exception {
-    // grant a privilege with Grant Option
+    // Grant a privilege with 'Grant Option'.
     String requestorUserName = ADMIN_USER;
     String roleName1 = "admin_r1";
     int grantOption = 1;
@@ -259,11 +259,11 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
     client.grantTablePrivilege(requestorUserName, roleName1, "server", "db1", "table1", "ALL", grantOption);
     assertEquals(1, client.listAllPrivilegesByRoleName(requestorUserName, roleName1).size());
 
-    // grant a privilege without Grant Option
+    // Grant a privilege without 'Grant Option'.
     client.grantTablePrivilege(requestorUserName, roleName1, "server", "db1", "table1", "ALL", withoutGrantOption);
     assertEquals(2, client.listAllPrivilegesByRoleName(requestorUserName, roleName1).size());
 
-    //revoke all the privilege use 'grantOption = -1'
+    // Use 'grantOption = -1', the two privileges will be revoked.
     client.revokeTablePrivilege(requestorUserName, roleName1, "server", "db1", "table1", "ALL", -1);
     assertEquals(0, client.listAllPrivilegesByRoleName(requestorUserName, roleName1).size());
   }
