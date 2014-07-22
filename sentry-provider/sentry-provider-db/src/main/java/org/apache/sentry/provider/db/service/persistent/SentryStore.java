@@ -89,6 +89,7 @@ public class SentryStore {
   private long commitSequenceId;
   private final PersistenceManagerFactory pmf;
   private Configuration conf;
+  public static final String PRIVILEGE_NAME_SPLITTER = "+";
 
   public SentryStore(Configuration conf) throws SentryNoSuchObjectException,
   SentryAccessDeniedException {
@@ -335,13 +336,16 @@ public class SentryStore {
     return;
   }
 
-  public CommitContext alterSentryRoleRevokePrivilege(String roleName,
-      TSentryPrivilege tPrivilege) throws SentryNoSuchObjectException, SentryInvalidInputException {
+  public CommitContext alterSentryRoleRevokePrivilege(String roleName, TSentryPrivilege tPrivilege)
+      throws SentryNoSuchObjectException, SentryInvalidInputException, SentryNoGrantOpitonException {
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     roleName = safeTrimLower(roleName);
     try {
       pm = openTransaction();
+      // first do revoke check
+      grantOptionCheck(pm, tPrivilege);
+
       alterSentryRoleRevokePrivilegeCore(pm, roleName, tPrivilege);
 
       CommitContext commit = commitUpdateTransaction(pm);
@@ -455,7 +459,10 @@ public class SentryStore {
   private Set<MSentryPrivilege> getChildPrivileges(Set<String> roleNames,
       MSentryPrivilege parent) throws SentryInvalidInputException {
     // Table and URI do not have children
-    if ((parent.getTableName() != null)||(parent.getURI() != null)) return new HashSet<MSentryPrivilege>();
+    if (((parent.getTableName() != null)||(parent.getURI() != null))
+        && parent.getGrantOption() >= 0) {
+      return new HashSet<MSentryPrivilege>();
+    }
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     try {
@@ -476,9 +483,14 @@ public class SentryStore {
       } else {
         filters.append(" && (dbName != null || URI != null)");
       }
+      // if grantOption=-1
+      // we should revoke all privileges with different grantOption
+      if (parent.getGrantOption() < 0) {
+        filters.append(" && grantOption != null");
+      }
       query.setFilter(filters.toString());
       query
-          .setResult("privilegeScope, serverName, dbName, tableName, URI, action, grantorPrincipal");
+          .setResult("privilegeScope, serverName, dbName, tableName, URI, action, grantorPrincipal, grantOption");
       Set<MSentryPrivilege> privileges = new HashSet<MSentryPrivilege>();
       for (Object[] privObj : (List<Object[]>) query.execute()) {
         MSentryPrivilege priv = new MSentryPrivilege();
@@ -490,6 +502,7 @@ public class SentryStore {
         priv.setAction((String) privObj[5]);
         priv.setGrantorPrincipal((String) privObj[6]);
         priv.setPrivilegeName(constructPrivilegeName(convertToTSentryPrivilege(priv)));
+        priv.setGrantOption((Integer) privObj[7]);
         privileges.add(priv);
       }
       rollbackTransaction = false;
@@ -578,18 +591,18 @@ public class SentryStore {
 
     if (uri == null || uri.equals("")) {
       privilegeName.append(serverName);
-      privilegeName.append("+");
+      privilegeName.append(PRIVILEGE_NAME_SPLITTER);
       privilegeName.append(dbName);
 
       if (tableName != null && !tableName.equals("")) {
-        privilegeName.append("+");
+        privilegeName.append(PRIVILEGE_NAME_SPLITTER);
         privilegeName.append(tableName);
       }
-      privilegeName.append("+");
+      privilegeName.append(PRIVILEGE_NAME_SPLITTER);
       privilegeName.append(action);
     } else {
       privilegeName.append(serverName);
-      privilegeName.append("+");
+      privilegeName.append(PRIVILEGE_NAME_SPLITTER);
       privilegeName.append(uri);
     }
     return privilegeName.toString();
@@ -1401,7 +1414,7 @@ public class SentryStore {
           if (p.getGrantOption() > 0 &&
               // high priority can grant low priority
               p.getGrantOption() >= mPri.getGrantOption() &&
-              p.hasChildPrivilege(mPri, "\\+")) {
+              p.hasChildPrivilege(mPri, "\\" + PRIVILEGE_NAME_SPLITTER)) {
             hasGrant = true;
             break;
           }
