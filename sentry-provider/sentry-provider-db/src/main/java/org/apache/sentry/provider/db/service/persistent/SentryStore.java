@@ -459,7 +459,10 @@ public class SentryStore {
   private Set<MSentryPrivilege> getChildPrivileges(Set<String> roleNames,
       MSentryPrivilege parent) throws SentryInvalidInputException {
     // Table and URI do not have children
-    if ((parent.getTableName() != null)||(parent.getURI() != null)) return new HashSet<MSentryPrivilege>();
+    if (((parent.getTableName() != null)||(parent.getURI() != null))
+        && parent.getGrantOption() >= 0) {
+      return new HashSet<MSentryPrivilege>();
+    }
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     try {
@@ -480,9 +483,14 @@ public class SentryStore {
       } else {
         filters.append(" && (dbName != null || URI != null)");
       }
+      // if grantOption=-1
+      // we should revoke all privileges with different grantOption
+      if (parent.getGrantOption() < 0) {
+        filters.append(" && grantOption != null");
+      }
       query.setFilter(filters.toString());
       query
-          .setResult("privilegeScope, serverName, dbName, tableName, URI, action, grantorPrincipal");
+          .setResult("privilegeScope, serverName, dbName, tableName, URI, action, grantorPrincipal, grantOption");
       Set<MSentryPrivilege> privileges = new HashSet<MSentryPrivilege>();
       for (Object[] privObj : (List<Object[]>) query.execute()) {
         MSentryPrivilege priv = new MSentryPrivilege();
@@ -494,6 +502,7 @@ public class SentryStore {
         priv.setAction((String) privObj[5]);
         priv.setGrantorPrincipal((String) privObj[6]);
         priv.setPrivilegeName(constructPrivilegeName(convertToTSentryPrivilege(priv)));
+        priv.setGrantOption((Integer) privObj[7]);
         privileges.add(priv);
       }
       rollbackTransaction = false;

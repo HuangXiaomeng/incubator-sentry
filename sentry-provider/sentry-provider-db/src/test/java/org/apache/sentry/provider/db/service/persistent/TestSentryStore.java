@@ -497,6 +497,54 @@ public class TestSentryStore {
   }
 
   @Test
+  public void testRevokeAllGrantOption() throws Exception {
+    // 1. add a role revoke_check_adminRole to adminGroups
+    String roleName = "revoke_all_grant_adminRole";
+    String grantor = "g1";
+    String server = "server1";
+    String db = "db1";
+    String table = "tbl1";
+    long seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
+    Set<TSentryGroup> groups = Sets.newHashSet();
+    TSentryGroup group = new TSentryGroup();
+    group.setGroupName(adminGroups[0]);
+    groups.add(group);
+    assertEquals(seqId + 1, sentryStore.alterSentryRoleAddGroups(grantor,
+        roleName, groups).getSequenceId());
+
+    // 2. adminRole grant select on table tb1 to user user1, with grant option
+    roleName = "revoke_all_grant_user1";
+    grantor = "revoke_all_grant_adminRole";
+    seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
+    TSentryPrivilege privilege = new TSentryPrivilege();
+    privilege.setPrivilegeScope("TABLE");
+    privilege.setServerName(server);
+    privilege.setDbName(db);
+    privilege.setTableName(table);
+    privilege.setAction(AccessConstants.SELECT);
+    privilege.setGrantorPrincipal(grantor);
+    privilege.setCreateTime(System.currentTimeMillis());
+    privilege.setPrivilegeName(SentryStore.constructPrivilegeName(privilege));
+    privilege.setGrantOption(1);
+    assertEquals(seqId + 1, sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege)
+        .getSequenceId());
+
+    // 3. adminRole grant select on table tb1 to user user2, with grant option
+    roleName = "revoke_all_grant_user1";
+    grantor = "revoke_all_grant_adminRole";
+    privilege.setGrantOption(0);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege);
+
+    // 4. user1 revoke all privilege from user1
+    roleName = "revoke_all_grant_user1";
+    privilege.setGrantOption(-1);
+    sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege);
+    MSentryRole role = sentryStore.getMSentryRoleByName(roleName);
+    Set<MSentryPrivilege> privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 0, privileges.size());
+  }
+
+  @Test
   public void testListSentryPrivilegesForProvider() throws Exception {
     String roleName1 = "list-privs-r1", roleName2 = "list-privs-r2";
     String groupName1 = "list-privs-g1", groupName2 = "list-privs-g2";
