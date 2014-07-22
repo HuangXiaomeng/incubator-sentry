@@ -535,7 +535,7 @@ public class TestSentryStore {
     privilege.setGrantOption(0);
     sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege);
 
-    // 4. user1 revoke all privilege from user1
+    // 4. adminRole revoke all privilege from user1
     roleName = "revoke_all_grant_user1";
     privilege.setGrantOption(-1);
     sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege);
