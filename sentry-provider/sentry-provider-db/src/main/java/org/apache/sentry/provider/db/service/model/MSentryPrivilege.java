@@ -32,7 +32,7 @@ public class MSentryPrivilege {
 
   private String privilegeScope;
   /**
-   * Privilege name is unique
+   * index name="SentryPrivilegeIndex", members={"privilegeName", "grantOption"}
    */
   private String privilegeName;
   private String serverName;
@@ -40,6 +40,7 @@ public class MSentryPrivilege {
   private String tableName;
   private String URI;
   private String action;
+  private int grantOption;
   // roles this privilege is a part of
   private Set<MSentryRole> roles;
   private long createTime;
@@ -51,7 +52,7 @@ public class MSentryPrivilege {
 
   public MSentryPrivilege(String privilegeName, String privilegeScope,
       String serverName, String dbName, String tableName, String URI,
-      String action) {
+      String action, int grantOption) {
     this.privilegeName = privilegeName;
     this.privilegeScope = privilegeScope;
     this.serverName = serverName;
@@ -59,7 +60,15 @@ public class MSentryPrivilege {
     this.tableName = tableName;
     this.URI = URI;
     this.action = action;
+    this.grantOption = grantOption;
     this.roles = new HashSet<MSentryRole>();
+  }
+
+  public MSentryPrivilege(String privilegeName, String privilegeScope,
+      String serverName, String dbName, String tableName, String URI,
+      String action) {
+    this(privilegeName, privilegeScope, serverName, dbName, tableName,
+        URI, action, 0);
   }
 
   public String getServerName() {
@@ -134,6 +143,14 @@ public class MSentryPrivilege {
     this.privilegeName = privilegeName;
   }
 
+  public int getGrantOption() {
+    return grantOption;
+  }
+
+  public void setGrantOption(int grantOption) {
+    this.grantOption = grantOption;
+  }
+
   public void appendRole(MSentryRole role) {
     roles.add(role);
   }
@@ -153,7 +170,8 @@ public class MSentryPrivilege {
         + ", privilegeName=" + privilegeName + ", serverName=" + serverName
         + ", dbName=" + dbName + ", tableName=" + tableName + ", URI=" + URI
         + ", action=" + action + ", roles=[...]" + ", createTime="
-        + createTime + ", grantorPrincipal=" + grantorPrincipal + "]";
+        + createTime + ", grantorPrincipal=" + grantorPrincipal
+        + ", grantOption=" + grantOption +"]";
   }
 
   @Override
@@ -179,6 +197,9 @@ public class MSentryPrivilege {
         return false;
     } else if (!privilegeName.equals(other.privilegeName))
       return false;
+    if (grantOption != other.grantOption) {
+      return false;
+    }
     return true;
   }
 }

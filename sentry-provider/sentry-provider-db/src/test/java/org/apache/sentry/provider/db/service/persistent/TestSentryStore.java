@@ -224,6 +224,7 @@ public class TestSentryStore {
     assertEquals(db, mPrivilege.getDbName());
     assertEquals(table, mPrivilege.getTableName());
     assertEquals(AccessConstants.INSERT, mPrivilege.getAction());
+    assertEquals(0, mPrivilege.getGrantOption());
   }
 
   @Test
