@@ -187,9 +187,15 @@ public abstract class SentryServiceIntegrationBase extends KerberosSecurityTestc
   public void beforeSetup() throws Exception {
 
   }
-  public void afterSetup() throws Exception {
 
+  public void afterSetup() throws Exception {
+    Set<String> requestorUserGroupNames = Sets.newHashSet(ADMIN_GROUP);
+    setLocalGroupMapping(ADMIN_USER, requestorUserGroupNames);
+    writePolicyFile();
+    client.createRole(ADMIN_USER, ADMIN_USER);
+    client.grantRoleToGroup(ADMIN_USER, ADMIN_GROUP, ADMIN_USER);
   }
+
   public void beforeTeardown() throws Exception {
 
   }

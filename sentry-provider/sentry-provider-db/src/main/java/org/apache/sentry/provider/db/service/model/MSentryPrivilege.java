@@ -202,4 +202,41 @@ public class MSentryPrivilege {
     }
     return true;
   }
+
+  /**
+   * Return true if other privilege is a child of this privilege
+   * Otherwise, return false
+   * @param other, other privilege
+   * @param SPLITTER, delimiter of privilegeName
+   */
+  public boolean hasChildPrivilege(MSentryPrivilege other, String SPLITTER) {
+    String[] myParts = this.privilegeName.split(SPLITTER);
+    String[] yourParts = other.privilegeName.split(SPLITTER);
+    int mySize = myParts.length;
+    int yourSize = yourParts.length;
+
+    // my scope must >= your scope
+    if (mySize > yourSize) {
+      return false;
+    }
+
+    // at least one scope + one action
+    if (mySize < 2 || yourSize < 2) {
+      return false;
+    }
+
+    for (int index = 0; index < mySize - 2; index++) {
+      if (!myParts[index].equalsIgnoreCase(yourParts[index])) {
+        return false;
+      }
+    }
+    String myAction = myParts[mySize - 1];
+    String yourAction = yourParts[yourSize - 1];
+    if (!myAction.equalsIgnoreCase("*") &&
+        !myAction.equalsIgnoreCase(yourAction)) {
+      return false;
+    }
+
+    return true;
+  }
 }

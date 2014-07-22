@@ -46,6 +46,7 @@ import org.apache.sentry.provider.common.ProviderConstants;
 import org.apache.sentry.provider.db.SentryAccessDeniedException;
 import org.apache.sentry.provider.db.SentryAlreadyExistsException;
 import org.apache.sentry.provider.db.SentryInvalidInputException;
+import org.apache.sentry.provider.db.SentryNoGrantOpitonException;
 import org.apache.sentry.provider.db.SentryNoSuchObjectException;
 import org.apache.sentry.provider.db.service.model.MSentryGroup;
 import org.apache.sentry.provider.db.service.model.MSentryPrivilege;
@@ -87,10 +88,12 @@ public class SentryStore {
    */
   private long commitSequenceId;
   private final PersistenceManagerFactory pmf;
+  private Configuration conf;
 
   public SentryStore(Configuration conf) throws SentryNoSuchObjectException,
   SentryAccessDeniedException {
     commitSequenceId = 0;
+    this.conf = conf;
     Properties prop = new Properties();
     prop.putAll(ServerConfig.SENTRY_STORE_DEFAULTS);
     String jdbcUrl = conf.get(ServerConfig.SENTRY_STORE_JDBC_URL, "").trim();
@@ -264,12 +267,15 @@ public class SentryStore {
   }
 
   public CommitContext alterSentryRoleGrantPrivilege(String roleName, TSentryPrivilege privilege)
-      throws SentryNoSuchObjectException, SentryInvalidInputException {
+      throws SentryNoSuchObjectException, SentryInvalidInputException, SentryNoGrantOpitonException {
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     roleName = trimAndLower(roleName);
     try {
       pm = openTransaction();
+      // first do grant check
+      grantOptionCheck(pm, privilege);
+
       alterSentryRoleGrantPrivilegeCore(pm, roleName, privilege);
       CommitContext commit = commitUpdateTransaction(pm);
       rollbackTransaction = false;
@@ -1353,5 +1359,64 @@ public class SentryStore {
     tSentryPrivilege.setPrivilegeScope(scope.name());
     tSentryPrivilege.setAction(AccessConstants.ALL);
     return tSentryPrivilege;
+  }
+
+  /**
+   * Grant option check
+   * @param pm
+   * @param privilege
+   * @throws SentryNoSuchObjectException
+   * @throws SentryInvalidInputException
+   * @throws SentryNoGrantOpitonException
+   */
+  private void grantOptionCheck(PersistenceManager pm, TSentryPrivilege privilege)
+      throws SentryNoSuchObjectException, SentryInvalidInputException, SentryNoGrantOpitonException {
+    MSentryPrivilege mPri = convertToMSentryPrivilege(privilege);
+    String grantorPrincipal = mPri.getGrantorPrincipal();
+    if (grantorPrincipal == null) {
+      throw new SentryInvalidInputException("grantorPrincipal should not be null");
+    }
+    String grantor = trimAndLower(mPri.getGrantorPrincipal());
+    MSentryRole grantorRole = getMSentryRole(pm, grantor);
+    if (grantorRole == null) {
+      throw new SentryNoSuchObjectException("Role: " + grantor);
+    }
+    Set<String> adminSet = getAdminGroups();
+    boolean isAdminRole = false;
+    if (adminSet != null && adminSet.size() > 0) {
+      for (MSentryGroup group : grantorRole.getGroups()) {
+        if (adminSet.contains(group.getGroupName())) {
+          isAdminRole = true;
+          break;
+        }
+      }
+    }
+    if (!isAdminRole) {
+      Set<MSentryPrivilege> privilegeSet = grantorRole.getPrivileges();
+      if (privilegeSet != null) {
+        // if grantorRole has a privilege p with grant option
+        // and mPri is a child privilege of p
+        boolean hasGrant = false;
+        for (MSentryPrivilege p : privilegeSet) {
+          if (p.getGrantOption() > 0 &&
+              // high priority can grant low priority
+              p.getGrantOption() >= mPri.getGrantOption() &&
+              p.hasChildPrivilege(mPri, "\\+")) {
+            hasGrant = true;
+            break;
+          }
+        }
+        if (!hasGrant) {
+          throw new SentryNoGrantOpitonException(mPri.getGrantorPrincipal()
+              + " has no grant!");
+        }
+      }
+    }
+  }
+
+  // get adminGroups from conf
+  private Set<String> getAdminGroups() {
+    return Sets.newHashSet(conf.getStrings(
+        ServerConfig.ADMIN_GROUPS, new String[]{}));
   }
 }
