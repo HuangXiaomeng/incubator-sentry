@@ -41,6 +41,7 @@ public class MSentryPrivilege {
   private String tableName = "";
   private String URI = "";
   private String action = "";
+  private int grantOption;
   // roles this privilege is a part of
   private Set<MSentryRole> roles;
   private long createTime;
@@ -52,14 +53,22 @@ public class MSentryPrivilege {
 
   public MSentryPrivilege(String privilegeName, String privilegeScope,
       String serverName, String dbName, String tableName, String URI,
-      String action) {
+      String action, int grantOption) {
     this.privilegeScope = privilegeScope;
     this.serverName = serverName;
     this.dbName = Strings.nullToEmpty(dbName);
     this.tableName = Strings.nullToEmpty(tableName);
     this.URI = Strings.nullToEmpty(URI);
     this.action = Strings.nullToEmpty(action);
+    this.grantOption = grantOption;
     this.roles = new HashSet<MSentryRole>();
+  }
+
+  public MSentryPrivilege(String privilegeName, String privilegeScope,
+      String serverName, String dbName, String tableName, String URI,
+      String action) {
+    this(privilegeName, privilegeScope, serverName, dbName, tableName,
+        URI, action, 0);
   }
 
   public String getServerName() {
@@ -126,6 +135,14 @@ public class MSentryPrivilege {
     this.privilegeScope = privilegeScope;
   }
 
+   public int getGrantOption() {
+     return grantOption;
+   }
+
+   public void setGrantOption(int grantOption) {
+     this.grantOption = grantOption;
+   }
+
   public void appendRole(MSentryRole role) {
     roles.add(role);
   }
@@ -142,10 +159,11 @@ public class MSentryPrivilege {
   @Override
   public String toString() {
     return "MSentryPrivilege [privilegeScope=" + privilegeScope
-        + ", serverName=" + serverName + ", dbName=" + dbName 
+        + ", serverName=" + serverName + ", dbName=" + dbName
         + ", tableName=" + tableName + ", URI=" + URI
         + ", action=" + action + ", roles=[...]" + ", createTime="
-        + createTime + ", grantorPrincipal=" + grantorPrincipal + "]";
+        + createTime + ", grantorPrincipal=" + grantorPrincipal
+        + ", grantOption=" + grantOption +"]";
   }
 
 @Override
@@ -158,6 +176,7 @@ public int hashCode() {
 	result = prime * result
 			+ ((serverName == null) ? 0 : serverName.hashCode());
 	result = prime * result + ((tableName == null) ? 0 : tableName.hashCode());
+	result = prime * result + (new Integer(grantOption)).hashCode();
 	return result;
 }
 
@@ -195,6 +214,9 @@ public boolean equals(Object obj) {
 			return false;
 	} else if (!tableName.equals(other.tableName))
 		return false;
+	if (grantOption != other.grantOption) {
+	  return false;
+	}
 	return true;
 }
 
