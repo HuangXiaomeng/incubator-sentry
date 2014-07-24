@@ -53,6 +53,7 @@ import org.apache.sentry.provider.db.service.model.MSentryRole;
 import org.apache.sentry.provider.db.service.model.MSentryVersion;
 import org.apache.sentry.provider.db.service.thrift.TSentryActiveRoleSet;
 import org.apache.sentry.provider.db.service.thrift.TSentryAuthorizable;
+import org.apache.sentry.provider.db.service.thrift.TSentryGrantOption;
 import org.apache.sentry.provider.db.service.thrift.TSentryGroup;
 import org.apache.sentry.provider.db.service.thrift.TSentryPrivilege;
 import org.apache.sentry.provider.db.service.thrift.TSentryRole;
@@ -496,14 +497,20 @@ public class SentryStore {
   }
 
   private MSentryPrivilege getMSentryPrivilege(TSentryPrivilege tPriv, PersistenceManager pm) {
-    Query query = pm.newQuery(MSentryPrivilege.class);    
+    Query query = pm.newQuery(MSentryPrivilege.class);
     query.setFilter("this.serverName == \"" + tPriv.getServerName() + "\" "
-				+ "&& this.dbName == \"" + tPriv.getDbName() + "\" "
-				+ "&& this.tableName == \"" + tPriv.getTableName() + "\" "
-				+ "&& this.URI == \"" + tPriv.getURI() + "\" "
-				+ "&& this.action == \"" + tPriv.getAction().toLowerCase() + "\"");
+        + "&& this.dbName == \"" + tPriv.getDbName() + "\" "
+        + "&& this.tableName == \"" + tPriv.getTableName() + "\" "
+        + "&& this.URI == \"" + tPriv.getURI() + "\" "
+        + "&& this.grantOption == grantOption "
+        + "&& this.action == \"" + tPriv.getAction().toLowerCase() + "\"");
+    query.declareParameters("Boolean grantOption");
     query.setUnique(true);
-    Object obj = query.execute();
+    Boolean grantOption = false;
+    if (tPriv.getGrantOption().equals(TSentryGrantOption.TRUE)) {
+      grantOption = true;
+    }
+    Object obj = query.execute(grantOption);
     if (obj != null)
       return (MSentryPrivilege) obj;
     return null;
@@ -1011,6 +1018,11 @@ public class SentryStore {
     privilege.setTableName(mSentryPrivilege.getTableName());
     privilege.setURI(mSentryPrivilege.getURI());
     privilege.setGrantorPrincipal(mSentryPrivilege.getGrantorPrincipal());
+    if (mSentryPrivilege.getGrantOption() != null) {
+      privilege.setGrantOption(TSentryGrantOption.valueOf(mSentryPrivilege.getGrantOption().toString().toUpperCase()));
+    } else {
+      privilege.setGrantOption(TSentryGrantOption.UNSET);
+    }
     return privilege;
   }
 
@@ -1030,6 +1042,9 @@ public class SentryStore {
     mSentryPrivilege.setCreateTime(System.currentTimeMillis());
     mSentryPrivilege.setGrantorPrincipal(safeTrim(privilege.getGrantorPrincipal()));
     mSentryPrivilege.setURI(safeTrim(privilege.getURI()));
+    if ( !privilege.getGrantOption().equals(TSentryGrantOption.UNSET) ) {
+      mSentryPrivilege.setGrantOption(Boolean.valueOf(privilege.getGrantOption().toString()));
+    }
     return mSentryPrivilege;
   }
   private static String safeTrim(String s) {
