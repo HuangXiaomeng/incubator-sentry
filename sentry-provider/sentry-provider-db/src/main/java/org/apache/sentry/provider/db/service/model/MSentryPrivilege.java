@@ -41,7 +41,7 @@ public class MSentryPrivilege {
   private String tableName = "";
   private String URI = "";
   private String action = "";
-  private int grantOption;
+  private Boolean grantOption = false;
   // roles this privilege is a part of
   private Set<MSentryRole> roles;
   private long createTime;
@@ -53,7 +53,7 @@ public class MSentryPrivilege {
 
   public MSentryPrivilege(String privilegeName, String privilegeScope,
       String serverName, String dbName, String tableName, String URI,
-      String action, int grantOption) {
+      String action, Boolean grantOption) {
     this.privilegeScope = privilegeScope;
     this.serverName = serverName;
     this.dbName = Strings.nullToEmpty(dbName);
@@ -68,7 +68,7 @@ public class MSentryPrivilege {
       String serverName, String dbName, String tableName, String URI,
       String action) {
     this(privilegeName, privilegeScope, serverName, dbName, tableName,
-        URI, action, 0);
+        URI, action, false);
   }
 
   public String getServerName() {
@@ -135,11 +135,11 @@ public class MSentryPrivilege {
     this.privilegeScope = privilegeScope;
   }
 
-   public int getGrantOption() {
+   public Boolean getGrantOption() {
      return grantOption;
    }
 
-   public void setGrantOption(int grantOption) {
+   public void setGrantOption(Boolean grantOption) {
      this.grantOption = grantOption;
    }
 
@@ -176,7 +176,7 @@ public int hashCode() {
 	result = prime * result
 			+ ((serverName == null) ? 0 : serverName.hashCode());
 	result = prime * result + ((tableName == null) ? 0 : tableName.hashCode());
-	result = prime * result + (new Integer(grantOption)).hashCode();
+	result = prime * result + ((grantOption == null) ? 0 : grantOption.hashCode());
 	return result;
 }
 
@@ -214,9 +214,11 @@ public boolean equals(Object obj) {
 			return false;
 	} else if (!tableName.equals(other.tableName))
 		return false;
-	if (grantOption != other.grantOption) {
+	if (grantOption == null) {
+	  if (other.grantOption != null)
+	    return false;
+	} else if (!grantOption.equals(other.grantOption))
 	  return false;
-	}
 	return true;
 }
 

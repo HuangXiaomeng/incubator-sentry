@@ -21,6 +21,7 @@ package org.apache.sentry.provider.db.service.persistent;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 import java.util.Arrays;
@@ -220,7 +221,7 @@ public class TestSentryStore {
     assertEquals(db, mPrivilege.getDbName());
     assertEquals(table, mPrivilege.getTableName());
     assertEquals(AccessConstants.INSERT, mPrivilege.getAction());
-    assertEquals(0, mPrivilege.getGrantOption());
+    assertFalse(mPrivilege.getGrantOption());
   }
 
   @Test
