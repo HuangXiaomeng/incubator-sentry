@@ -241,8 +241,8 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
     // Grant a privilege with Grant Option
     String requestorUserName = ADMIN_USER;
     String roleName1 = "admin_r1";
-    int grantOption = 1;
-    int withoutGrantOption = 0;
+    boolean grantOption = true;
+    boolean withoutGrantOption = false;
     client.dropRoleIfExists(requestorUserName,  roleName1);
     client.createRole(requestorUserName,  roleName1);
 
@@ -264,8 +264,8 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
     // Grant a privilege with 'Grant Option'.
     String requestorUserName = ADMIN_USER;
     String roleName1 = "admin_r1";
-    int grantOption = 1;
-    int withoutGrantOption = 0;
+    boolean grantOption = true;
+    boolean withoutGrantOption = false;
     client.dropRoleIfExists(requestorUserName,  roleName1);
     client.createRole(requestorUserName,  roleName1);
 
@@ -276,8 +276,8 @@ public class TestSentryServiceIntegration extends SentryServiceIntegrationBase {
     client.grantTablePrivilege(requestorUserName, roleName1, "server", "db1", "table1", "ALL", withoutGrantOption);
     assertEquals(2, client.listAllPrivilegesByRoleName(requestorUserName, roleName1).size());
 
-    // Use 'grantOption = -1', the two privileges will be revoked.
-    client.revokeTablePrivilege(requestorUserName, roleName1, "server", "db1", "table1", "ALL", -1);
+    // Use 'grantOption = null', the two privileges will be revoked.
+    client.revokeTablePrivilege(requestorUserName, roleName1, "server", "db1", "table1", "ALL", null);
     assertEquals(0, client.listAllPrivilegesByRoleName(requestorUserName, roleName1).size());
   }
 }

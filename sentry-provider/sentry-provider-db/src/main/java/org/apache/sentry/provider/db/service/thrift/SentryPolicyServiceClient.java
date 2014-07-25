@@ -285,7 +285,7 @@ public class SentryPolicyServiceClient {
   }
 
   public void grantURIPrivilege(String requestorUserName,
-      String roleName, String server, String uri, int grantOption)
+      String roleName, String server, String uri, Boolean grantOption)
   throws SentryUserException {
     grantPrivilege(requestorUserName, roleName,
         PrivilegeScope.URI, server, uri, null, null, AccessConstants.ALL, grantOption);
@@ -299,7 +299,7 @@ public class SentryPolicyServiceClient {
   }
 
   public void grantServerPrivilege(String requestorUserName,
-      String roleName, String server, int grantOption)
+      String roleName, String server, Boolean grantOption)
   throws SentryUserException {
     grantPrivilege(requestorUserName, roleName,
         PrivilegeScope.SERVER, server, null, null, null, AccessConstants.ALL, grantOption);
@@ -313,7 +313,7 @@ public class SentryPolicyServiceClient {
   }
 
   public void grantDatabasePrivilege(String requestorUserName,
-      String roleName, String server, String db, String action, int grantOption)
+      String roleName, String server, String db, String action, Boolean grantOption)
   throws SentryUserException {
     grantPrivilege(requestorUserName, roleName,
         PrivilegeScope.DATABASE, server, null, db, null, action, grantOption);
@@ -328,7 +328,7 @@ public class SentryPolicyServiceClient {
   }
 
   public void grantTablePrivilege(String requestorUserName,
-      String roleName, String server, String db, String table, String action, int grantOption)
+      String roleName, String server, String db, String table, String action, Boolean grantOption)
   throws SentryUserException {
     grantPrivilege(requestorUserName, roleName, PrivilegeScope.TABLE, server,
         null, db, table, action, grantOption);
@@ -360,11 +360,11 @@ public class SentryPolicyServiceClient {
       PrivilegeScope scope, String serverName, String uri, String db,
       String table, String action)  throws SentryUserException {
     grantPrivilege(requestorUserName, roleName, scope, serverName, uri,
-    db, table, action, 0);
+    db, table, action, false);
   }
 
   private void grantPrivilege(String requestorUserName,
-      String roleName, PrivilegeScope scope, String serverName, String uri, String db, String table, String action, int grantOption)
+      String roleName, PrivilegeScope scope, String serverName, String uri, String db, String table, String action, Boolean grantOption)
   throws SentryUserException {
     TAlterSentryRoleGrantPrivilegeRequest request = new TAlterSentryRoleGrantPrivilegeRequest();
     request.setProtocol_version(ThriftConstants.TSENTRY_SERVICE_VERSION_CURRENT);
@@ -379,7 +379,7 @@ public class SentryPolicyServiceClient {
     privilege.setAction(action);
     privilege.setGrantorPrincipal(requestorUserName);
     privilege.setCreateTime(System.currentTimeMillis());
-    privilege.setGrantOption(grantOption);
+    privilege.setGrantOption(convertTSentryGrantOption(grantOption));
     request.setPrivilege(privilege);
     try {
       TAlterSentryRoleGrantPrivilegeResponse response = client.alter_sentry_role_grant_privilege(request);
@@ -397,7 +397,7 @@ public class SentryPolicyServiceClient {
   }
 
   public void revokeURIPrivilege(String requestorUserName,
-      String roleName, String server, String uri, int grantOption)
+      String roleName, String server, String uri, Boolean grantOption)
   throws SentryUserException {
     revokePrivilege(requestorUserName, roleName,
         PrivilegeScope.URI, server, uri, null, null, AccessConstants.ALL, grantOption);
@@ -411,7 +411,7 @@ public class SentryPolicyServiceClient {
   }
 
   public void revokeServerPrivilege(String requestorUserName,
-      String roleName, String server, int grantOption)
+      String roleName, String server, Boolean grantOption)
   throws SentryUserException {
     revokePrivilege(requestorUserName, roleName,
         PrivilegeScope.SERVER, server, null, null, null, AccessConstants.ALL, grantOption);
@@ -425,7 +425,7 @@ public class SentryPolicyServiceClient {
   }
 
   public void revokeDatabasePrivilege(String requestorUserName,
-      String roleName, String server, String db, String action, int grantOption)
+      String roleName, String server, String db, String action, Boolean grantOption)
   throws SentryUserException {
     revokePrivilege(requestorUserName, roleName,
         PrivilegeScope.DATABASE, server, null, db, null, action, grantOption);
@@ -440,7 +440,7 @@ public class SentryPolicyServiceClient {
   }
 
   public void revokeTablePrivilege(String requestorUserName,
-      String roleName, String server, String db, String table, String action, int grantOption)
+      String roleName, String server, String db, String table, String action, Boolean grantOption)
   throws SentryUserException {
     revokePrivilege(requestorUserName, roleName,
         PrivilegeScope.TABLE, server, null,
@@ -450,11 +450,11 @@ public class SentryPolicyServiceClient {
   private void revokePrivilege(String requestorUserName,
       String roleName, PrivilegeScope scope, String serverName, String uri, String db, String table, String action)
   throws SentryUserException {
-    this.revokePrivilege(requestorUserName, roleName, scope, serverName, uri, db, table, action, 0);
+    this.revokePrivilege(requestorUserName, roleName, scope, serverName, uri, db, table, action, null);
   }
 
   private void revokePrivilege(String requestorUserName, String roleName,
-      PrivilegeScope scope, String serverName, String uri, String db, String table, String action, int grantOption)
+      PrivilegeScope scope, String serverName, String uri, String db, String table, String action, Boolean grantOption)
   throws SentryUserException {
     TAlterSentryRoleRevokePrivilegeRequest request = new TAlterSentryRoleRevokePrivilegeRequest();
     request.setProtocol_version(ThriftConstants.TSENTRY_SERVICE_VERSION_CURRENT);
@@ -469,7 +469,7 @@ public class SentryPolicyServiceClient {
     privilege.setAction(action);
     privilege.setGrantorPrincipal(requestorUserName);
     privilege.setCreateTime(System.currentTimeMillis());
-    privilege.setGrantOption(grantOption);
+    privilege.setGrantOption(convertTSentryGrantOption(grantOption));
     request.setPrivilege(privilege);
     try {
       TAlterSentryRoleRevokePrivilegeResponse response = client.alter_sentry_role_revoke_privilege(request);
@@ -477,6 +477,15 @@ public class SentryPolicyServiceClient {
     } catch (TException e) {
       throw new SentryUserException(THRIFT_EXCEPTION_MESSAGE, e);
     }
+  }
+
+  private TSentryGrantOption convertTSentryGrantOption(Boolean grantOption) {
+    if (grantOption.equals(true)) {
+      return TSentryGrantOption.TRUE;
+    } else if (grantOption.equals(false)) {
+      return TSentryGrantOption.FALSE;
+    }
+    return TSentryGrantOption.UNSET;
   }
 
   public Set<String> listPrivilegesForProvider(Set<String> groups, ActiveRoleSet roleSet, Authorizable... authorizable)

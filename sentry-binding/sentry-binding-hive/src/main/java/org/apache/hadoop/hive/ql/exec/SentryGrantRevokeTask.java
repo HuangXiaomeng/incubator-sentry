@@ -280,7 +280,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
       String server, GrantDesc desc) throws SentryUserException {
     return processGrantRevokeDDL(console, sentryClient, subject,
         server, true, desc.getPrincipals(), desc.getPrivileges(),
-        desc.getPrivilegeSubjectDesc(), desc.isGrantOption() ? 1 : 0);
+        desc.getPrivilegeSubjectDesc(), desc.isGrantOption());
   }
 
   // For grant option, we use "-1" to stand for revoke the privilege ignore the grant option
@@ -289,7 +289,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
       String server, RevokeDesc desc) throws SentryUserException {
     return processGrantRevokeDDL(console, sentryClient, subject,
         server, false, desc.getPrincipals(), desc.getPrivileges(),
-        desc.getPrivilegeSubjectDesc(), -1);
+        desc.getPrivilegeSubjectDesc(), null);
   }
 
   private int processShowGrantDDL(HiveConf conf, LogHelper console, SentryPolicyServiceClient sentryClient,
@@ -487,7 +487,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
       SentryPolicyServiceClient sentryClient, String subject, String server,
       boolean isGrant, List<PrincipalDesc> principals,
       List<PrivilegeDesc> privileges, PrivilegeObjectDesc privSubjectObjDesc,
-      int grantOption) throws SentryUserException {
+      Boolean grantOption) throws SentryUserException {
     if (privileges == null || privileges.size() == 0) {
       console.printError("No privilege found.");
       return RETURN_CODE_FAILURE;
