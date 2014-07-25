@@ -480,7 +480,9 @@ public class SentryPolicyServiceClient {
   }
 
   private TSentryGrantOption convertTSentryGrantOption(Boolean grantOption) {
-    if (grantOption.equals(true)) {
+    if (grantOption == null) {
+      return TSentryGrantOption.UNSET;
+    } else if (grantOption.equals(true)) {
       return TSentryGrantOption.TRUE;
     } else if (grantOption.equals(false)) {
       return TSentryGrantOption.FALSE;
