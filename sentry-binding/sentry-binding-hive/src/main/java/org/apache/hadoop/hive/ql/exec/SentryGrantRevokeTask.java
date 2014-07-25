@@ -283,7 +283,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
         desc.getPrivilegeSubjectDesc(), desc.isGrantOption());
   }
 
-  // For grant option, we use "-1" to stand for revoke the privilege ignore the grant option
+  // For grant option, we use null to stand for revoke the privilege ignore the grant option
   private int processRevokeDDL(HiveConf conf, LogHelper console,
       SentryPolicyServiceClient sentryClient, String subject,
       String server, RevokeDesc desc) throws SentryUserException {
