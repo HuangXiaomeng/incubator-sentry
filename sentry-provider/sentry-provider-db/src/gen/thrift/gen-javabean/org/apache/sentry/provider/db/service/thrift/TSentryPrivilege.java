@@ -186,7 +186,7 @@ public class TSentryPrivilege implements org.apache.thrift.TBase<TSentryPrivileg
 
     this.action = "";
 
-    this.grantOption = org.apache.sentry.provider.db.service.thrift.TSentryGrantOption.UNSET;
+    this.grantOption = org.apache.sentry.provider.db.service.thrift.TSentryGrantOption.FALSE;
 
   }
 
@@ -253,7 +253,7 @@ public class TSentryPrivilege implements org.apache.thrift.TBase<TSentryPrivileg
     setCreateTimeIsSet(false);
     this.createTime = 0;
     this.grantorPrincipal = null;
-    this.grantOption = org.apache.sentry.provider.db.service.thrift.TSentryGrantOption.UNSET;
+    this.grantOption = org.apache.sentry.provider.db.service.thrift.TSentryGrantOption.FALSE;
 
   }
 
