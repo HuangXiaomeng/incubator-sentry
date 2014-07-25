@@ -450,7 +450,7 @@ public class SentryPolicyServiceClient {
   private void revokePrivilege(String requestorUserName,
       String roleName, PrivilegeScope scope, String serverName, String uri, String db, String table, String action)
   throws SentryUserException {
-    this.revokePrivilege(requestorUserName, roleName, scope, serverName, uri, db, table, action, null);
+    this.revokePrivilege(requestorUserName, roleName, scope, serverName, uri, db, table, action, false);
   }
 
   private void revokePrivilege(String requestorUserName, String roleName,
