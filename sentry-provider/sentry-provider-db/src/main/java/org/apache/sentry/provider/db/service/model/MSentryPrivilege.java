@@ -18,10 +18,15 @@
 
 package org.apache.sentry.provider.db.service.model;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.jdo.annotations.PersistenceCapable;
+
+import org.apache.commons.lang.text.StrSubstitutor;
+import org.apache.sentry.core.common.utils.PathUtils;
 
 import com.google.common.base.Strings;
 
@@ -222,5 +227,64 @@ public boolean equals(Object obj) {
 	return true;
 }
 
+  /**
+   * Return true if this privilege implies other privilege
+   * Otherwise, return false
+   * @param other, other privilege
+   */
+  public boolean implies(MSentryPrivilege other) {
+    if (!URI.equals("") && !other.URI.equals("")) {
+      if (!impliesURI(URI, other.URI)) {
+        return false;
+      }
+    } else if (URI.equals("") && other.URI.equals("")) {
+      if (!serverName.equals("")) {
+        if (other.serverName.equals("")) {
+          return false;
+        } else if (!serverName.equals(other.serverName)) {
+          return false;
+        }
+      }
+      if (!dbName.equals("")) {
+        if (other.dbName.equals("")) {
+          return false;
+        } else if (!dbName.equals(other.dbName)) {
+          return false;
+        }
+      }
+      if (!tableName.equals("")) {
+        if (other.tableName.equals("")) {
+          return false;
+        } else if (!tableName.equals(other.tableName)) {
+          return false;
+        }
+      }
+    } else {
+      return false;
+    }
+
+    if (!action.equalsIgnoreCase("*") &&
+        !action.equalsIgnoreCase(other.action)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  protected static boolean impliesURI(String privilege, String request) {
+    try {
+      URI privilegeURI = new URI(new StrSubstitutor(System.getProperties()).replace(privilege));
+      URI requestURI = new URI(request);
+      if(privilegeURI.getScheme() == null || privilegeURI.getPath() == null) {
+        return false;
+      }
+      if(requestURI.getScheme() == null || requestURI.getPath() == null) {
+        return false;
+      }
+      return PathUtils.impliesURI(privilegeURI, requestURI);
+      } catch (URISyntaxException e) {
+        return false;
+      }
+  }
 
 }

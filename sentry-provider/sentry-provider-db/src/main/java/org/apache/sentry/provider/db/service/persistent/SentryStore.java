@@ -40,17 +40,20 @@ import javax.jdo.Transaction;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.sentry.SentryUserException;
 import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.core.model.db.DBModelAuthorizable.AuthorizableType;
 import org.apache.sentry.provider.common.ProviderConstants;
 import org.apache.sentry.provider.db.SentryAccessDeniedException;
 import org.apache.sentry.provider.db.SentryAlreadyExistsException;
 import org.apache.sentry.provider.db.SentryInvalidInputException;
+import org.apache.sentry.provider.db.SentryNoGrantOpitonException;
 import org.apache.sentry.provider.db.SentryNoSuchObjectException;
 import org.apache.sentry.provider.db.service.model.MSentryGroup;
 import org.apache.sentry.provider.db.service.model.MSentryPrivilege;
 import org.apache.sentry.provider.db.service.model.MSentryRole;
 import org.apache.sentry.provider.db.service.model.MSentryVersion;
+import org.apache.sentry.provider.db.service.thrift.SentryPolicyStoreProcessor;
 import org.apache.sentry.provider.db.service.thrift.TSentryActiveRoleSet;
 import org.apache.sentry.provider.db.service.thrift.TSentryAuthorizable;
 import org.apache.sentry.provider.db.service.thrift.TSentryGrantOption;
@@ -88,10 +91,12 @@ public class SentryStore {
    */
   private long commitSequenceId;
   private final PersistenceManagerFactory pmf;
+  private Configuration conf;
 
   public SentryStore(Configuration conf) throws SentryNoSuchObjectException,
   SentryAccessDeniedException {
     commitSequenceId = 0;
+    this.conf = conf;
     Properties prop = new Properties();
     prop.putAll(ServerConfig.SENTRY_STORE_DEFAULTS);
     String jdbcUrl = conf.get(ServerConfig.SENTRY_STORE_JDBC_URL, "").trim();
@@ -265,12 +270,15 @@ public class SentryStore {
   }
 
   public CommitContext alterSentryRoleGrantPrivilege(String roleName, TSentryPrivilege privilege)
-      throws SentryNoSuchObjectException, SentryInvalidInputException {
+      throws SentryUserException {
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     roleName = trimAndLower(roleName);
     try {
       pm = openTransaction();
+      // first do grant check
+      grantOptionCheck(pm, privilege);
+
       alterSentryRoleGrantPrivilegeCore(pm, roleName, privilege);
       CommitContext commit = commitUpdateTransaction(pm);
       rollbackTransaction = false;
@@ -1282,5 +1290,70 @@ public class SentryStore {
     tSentryPrivilege.setPrivilegeScope(scope.name());
     tSentryPrivilege.setAction(AccessConstants.ALL);
     return tSentryPrivilege;
+  }
+
+  /**
+   * Grant option check
+   * @param pm
+   * @param privilege
+   * @throws SentryUserException
+   */
+  private void grantOptionCheck(PersistenceManager pm, TSentryPrivilege privilege)
+      throws SentryUserException {
+    MSentryPrivilege mPrivilege = convertToMSentryPrivilege(privilege);
+    String grantorPrincipal = mPrivilege.getGrantorPrincipal();
+    if (grantorPrincipal == null) {
+      throw new SentryInvalidInputException("grantorPrincipal should not be null");
+    }
+    Set<String> groups = SentryPolicyStoreProcessor.getGroupsFromUserName(conf, grantorPrincipal);
+    Set<String> adminSet = getAdminGroups();
+    boolean isAdminGroup = false;
+    if (adminSet != null && !adminSet.isEmpty()) {
+      for (String g : groups) {
+        if (adminSet.contains(g)) {
+          isAdminGroup = true;
+          break;
+        }
+      }
+    }
+
+    if (!isAdminGroup) {
+      Set<String> roles = getRoleNamesForGroups(groups);
+      if (roles == null || roles.isEmpty()) {
+        throw new SentryNoGrantOpitonException(grantorPrincipal
+            + " has no grant!");
+      }
+
+      boolean hasGrant = false;
+      for (String role: roles) {
+        MSentryRole grantorRole = getMSentryRole(pm, role);
+        if (grantorRole == null) {
+          continue;
+        }
+
+        Set<MSentryPrivilege> privilegeSet = grantorRole.getPrivileges();
+        if (privilegeSet != null && !privilegeSet.isEmpty()) {
+          // if grantorRole has a privilege p with grant option
+          // and mPrivilege is a child privilege of p
+          for (MSentryPrivilege p : privilegeSet) {
+            if (p.getGrantOption() && p.implies(mPrivilege)) {
+              hasGrant = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!hasGrant) {
+        throw new SentryNoGrantOpitonException(grantorPrincipal
+            + " has no grant!");
+      }
+    }
+  }
+
+  // get adminGroups from conf
+  private Set<String> getAdminGroups() {
+    return Sets.newHashSet(conf.getStrings(
+        ServerConfig.ADMIN_GROUPS, new String[]{}));
   }
 }

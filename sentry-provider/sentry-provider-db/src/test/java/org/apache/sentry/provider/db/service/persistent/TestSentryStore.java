@@ -33,6 +33,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.provider.db.SentryAlreadyExistsException;
+import org.apache.sentry.provider.db.SentryNoGrantOpitonException;
 import org.apache.sentry.provider.db.SentryNoSuchObjectException;
 import org.apache.sentry.provider.db.service.model.MSentryPrivilege;
 import org.apache.sentry.provider.db.service.model.MSentryRole;
@@ -41,6 +42,7 @@ import org.apache.sentry.provider.db.service.thrift.TSentryAuthorizable;
 import org.apache.sentry.provider.db.service.thrift.TSentryGrantOption;
 import org.apache.sentry.provider.db.service.thrift.TSentryGroup;
 import org.apache.sentry.provider.db.service.thrift.TSentryPrivilege;
+import org.apache.sentry.provider.file.PolicyFile;
 import org.apache.sentry.service.thrift.ServiceConstants.ServerConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -54,6 +56,9 @@ public class TestSentryStore {
 
   private File dataDir;
   private SentryStore sentryStore;
+  private String[] adminGroups = {"adminGroup1"};
+  private PolicyFile policyFile;
+  private File policyFilePath;
 
   @Before
   public void setup() throws Exception {
@@ -62,7 +67,18 @@ public class TestSentryStore {
     conf.set(ServerConfig.SENTRY_VERIFY_SCHEM_VERSION, "false");
     conf.set(ServerConfig.SENTRY_STORE_JDBC_URL,
         "jdbc:derby:;databaseName=" + dataDir.getPath() + ";create=true");
+    conf.setStrings(ServerConfig.ADMIN_GROUPS, adminGroups);
+    conf.set(ServerConfig.SENTRY_STORE_GROUP_MAPPING,
+        ServerConfig.SENTRY_STORE_LOCAL_GROUP_MAPPING);
+    policyFilePath = new File(dataDir, "local_policy_file.ini");
+    conf.set(ServerConfig.SENTRY_STORE_GROUP_MAPPING_RESOURCE,
+        policyFilePath.getPath());
+    policyFile = new PolicyFile();
     sentryStore = new SentryStore(conf);
+
+    String adminUser = "g1";
+    addGroupsToUser(adminUser, adminGroups);
+    writePolicyFile();
   }
 
   @After
@@ -106,12 +122,12 @@ public class TestSentryStore {
     sentryStore.createSentryRole(roleName, grantor);
     TSentryPrivilege tSentryPrivilege = new TSentryPrivilege("URI", "server1", "ALL");
     tSentryPrivilege.setURI(uri);
+    tSentryPrivilege.setGrantorPrincipal(grantor);
     sentryStore.alterSentryRoleGrantPrivilege(roleName, tSentryPrivilege);
 
     TSentryAuthorizable tSentryAuthorizable = new TSentryAuthorizable();
     tSentryAuthorizable.setUri(uri);
     tSentryAuthorizable.setServer("server1");
-
 
     Set<TSentryPrivilege> privileges =
         sentryStore.getTSentryPrivileges(new HashSet<String>(Arrays.asList(roleName)), tSentryAuthorizable);
@@ -150,6 +166,7 @@ public class TestSentryStore {
     long seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
     TSentryPrivilege sentryPrivilege = new TSentryPrivilege("Database", "server1", "all");
     sentryPrivilege.setDbName("db1");
+    sentryPrivilege.setGrantorPrincipal(grantor);
     assertEquals(seqId + 1, sentryStore.alterSentryRoleGrantPrivilege(roleName, sentryPrivilege).getSequenceId());
   }
   @Test
@@ -254,6 +271,119 @@ public class TestSentryStore {
     role = sentryStore.getMSentryRoleByName(roleName);
     privileges = role.getPrivileges();
     assertEquals(0, privileges.size());
+  }
+
+  @Test
+  public void testGrantCheckWithGrantOption() throws Exception {
+    // 1. set local group mapping
+    // user0->group0->role0
+    // user1->group1->role1
+    // user2->group2->role2
+    // user3->group3->role3
+    // user4->group4->role4
+    String grantor = "g1";
+    String[] users = {"user0","user1","user2","user3","user4"};
+    String[] roles = {"role0","role1","role2","role3","role4"};
+    String[] groups = {"group0","group1","group2","group3","group4"};
+    for (int i = 0; i < users.length; i++) {
+      addGroupsToUser(users[i], groups[i]);
+      sentryStore.createSentryRole(roles[i], grantor);
+      Set<TSentryGroup> TGroups = Sets.newHashSet();
+      TSentryGroup TGroup = new TSentryGroup(groups[i]);
+      TGroups.add(TGroup);
+      sentryStore.alterSentryRoleAddGroups(grantor, roles[i], TGroups);
+    }
+    writePolicyFile();
+
+
+    // 2. g1 grant all on database db1 to role0 with grant option
+    String server = "server1";
+    String db = "db1";
+    String table = "tbl1";
+    String roleName = roles[0];
+    grantor = "g1";
+    TSentryPrivilege privilege1 = new TSentryPrivilege();
+    privilege1.setPrivilegeScope("DATABASE");
+    privilege1.setServerName(server);
+    privilege1.setDbName(db);
+    privilege1.setAction(AccessConstants.ALL);
+    privilege1.setGrantorPrincipal(grantor);
+    privilege1.setCreateTime(System.currentTimeMillis());
+    privilege1.setGrantOption(TSentryGrantOption.TRUE);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege1);
+    MSentryRole role = sentryStore.getMSentryRoleByName(roleName);
+    Set<MSentryPrivilege> privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 1, privileges.size());
+
+    // 3. user0 grant select on database db1 to role1, with grant option
+    roleName = roles[1];
+    grantor = users[0];
+    TSentryPrivilege privilege2 = new TSentryPrivilege();
+    privilege2.setPrivilegeScope("DATABASE");
+    privilege2.setServerName(server);
+    privilege2.setDbName(db);
+    privilege2.setAction(AccessConstants.SELECT);
+    privilege2.setGrantorPrincipal(grantor);
+    privilege2.setCreateTime(System.currentTimeMillis());
+    privilege2.setGrantOption(TSentryGrantOption.TRUE);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege2);
+
+    // 4. user0 grant all on table tb1 to role2, no grant option
+    roleName = roles[2];
+    grantor = users[0];
+    TSentryPrivilege privilege3 = new TSentryPrivilege();
+    privilege3.setPrivilegeScope("TABLE");
+    privilege3.setServerName(server);
+    privilege3.setDbName(db);
+    privilege3.setTableName(table);
+    privilege3.setAction(AccessConstants.ALL);
+    privilege3.setGrantorPrincipal(grantor);
+    privilege3.setCreateTime(System.currentTimeMillis());
+    privilege3.setGrantOption(TSentryGrantOption.FALSE);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege3);
+
+    // 5. user1 has role1, no insert privilege,
+    // grant insert to role3, will throw no grant exception
+    roleName = roles[3];
+    grantor = users[1];
+    TSentryPrivilege privilege4 = new TSentryPrivilege();
+    privilege4.setPrivilegeScope("DATABASE");
+    privilege4.setServerName(server);
+    privilege4.setDbName(db);
+    privilege4.setAction(AccessConstants.INSERT);
+    privilege4.setGrantorPrincipal(grantor);
+    privilege4.setCreateTime(System.currentTimeMillis());
+    privilege4.setGrantOption(TSentryGrantOption.FALSE);
+    boolean isGrantOptionException = false;
+    try {
+      sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege4);
+    } catch (SentryNoGrantOpitonException e) {
+      isGrantOptionException = true;
+      System.err.println(e.getMessage());
+    }
+    assertTrue(isGrantOptionException);
+
+    // 6. user2 has role2, no grant option,
+    // grant select to role4, will throw no grant exception
+    roleName = roles[4];
+    grantor = users[2];
+    TSentryPrivilege privilege5 = new TSentryPrivilege();
+    privilege5.setPrivilegeScope("TABLE");
+    privilege5.setServerName(server);
+    privilege5.setDbName(db);
+    privilege5.setTableName(table);
+    privilege5.setAction(AccessConstants.INSERT);
+    privilege5.setGrantorPrincipal(grantor);
+    privilege5.setCreateTime(System.currentTimeMillis());
+    privilege5.setGrantOption(TSentryGrantOption.FALSE);
+    isGrantOptionException = false;
+    try {
+      sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege5);
+    } catch (SentryNoGrantOpitonException e) {
+      isGrantOptionException = true;
+      System.err.println(e.getMessage());
+    }
+    assertTrue(isGrantOptionException);
   }
 
   @Test
@@ -552,5 +682,13 @@ public class TestSentryStore {
             privilege.getGrantorPrincipal());
       }
     }
+  }
+
+  protected void addGroupsToUser(String user, String... groupNames) {
+    policyFile.addGroupsToUser(user, groupNames);
+  }
+
+  protected void writePolicyFile() throws Exception {
+    policyFile.write(policyFilePath);
   }
 }
