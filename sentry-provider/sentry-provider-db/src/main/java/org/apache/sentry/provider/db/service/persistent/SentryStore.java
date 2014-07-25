@@ -1306,11 +1306,12 @@ public class SentryStore {
       throw new SentryInvalidInputException("grantorPrincipal should not be null");
     }
     Set<String> groups = SentryPolicyStoreProcessor.getGroupsFromUserName(conf, grantorPrincipal);
-    Set<String> adminSet = getAdminGroups();
+    Set<String> admins = getAdminGroups();
     boolean isAdminGroup = false;
-    if (adminSet != null && !adminSet.isEmpty()) {
+    if (admins != null && !admins.isEmpty()
+        && groups != null && !groups.isEmpty()) {
       for (String g : groups) {
-        if (adminSet.contains(g)) {
+        if (admins.contains(g)) {
           isAdminGroup = true;
           break;
         }
