@@ -288,13 +288,12 @@ public class TestSentryStore {
     for (int i = 0; i < users.length; i++) {
       addGroupsToUser(users[i], groups[i]);
       sentryStore.createSentryRole(roles[i], grantor);
-      Set<TSentryGroup> TGroups = Sets.newHashSet();
-      TSentryGroup TGroup = new TSentryGroup(groups[i]);
-      TGroups.add(TGroup);
-      sentryStore.alterSentryRoleAddGroups(grantor, roles[i], TGroups);
+      Set<TSentryGroup> tGroups = Sets.newHashSet();
+      TSentryGroup tGroup = new TSentryGroup(groups[i]);
+      tGroups.add(tGroup);
+      sentryStore.alterSentryRoleAddGroups(grantor, roles[i], tGroups);
     }
     writePolicyFile();
-
 
     // 2. g1 grant all on database db1 to role0 with grant option
     String server = "server1";
