@@ -514,9 +514,11 @@ public class SentryStore {
         + "&& this.action == \"" + tPriv.getAction().toLowerCase() + "\"");
     query.declareParameters("Boolean grantOption");
     query.setUnique(true);
-    Boolean grantOption = false;
+    Boolean grantOption = null;
     if (tPriv.getGrantOption().equals(TSentryGrantOption.TRUE)) {
       grantOption = true;
+    } else if (tPriv.getGrantOption().equals(TSentryGrantOption.TRUE)) {
+      grantOption = false;
     }
     Object obj = query.execute(grantOption);
     if (obj != null)
@@ -1052,6 +1054,8 @@ public class SentryStore {
     mSentryPrivilege.setURI(safeTrim(privilege.getURI()));
     if ( !privilege.getGrantOption().equals(TSentryGrantOption.UNSET) ) {
       mSentryPrivilege.setGrantOption(Boolean.valueOf(privilege.getGrantOption().toString()));
+    } else {
+      mSentryPrivilege.setGrantOption(null);
     }
     return mSentryPrivilege;
   }
