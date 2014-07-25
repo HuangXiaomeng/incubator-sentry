@@ -339,12 +339,15 @@ public class SentryStore {
   }
 
   public CommitContext alterSentryRoleRevokePrivilege(String roleName,
-      TSentryPrivilege tPrivilege) throws SentryNoSuchObjectException, SentryInvalidInputException {
+      TSentryPrivilege tPrivilege) throws SentryUserException {
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     roleName = safeTrimLower(roleName);
     try {
       pm = openTransaction();
+      // first do revoke check
+      grantOptionCheck(pm, tPrivilege);
+
       alterSentryRoleRevokePrivilegeCore(pm, roleName, tPrivilege);
 
       CommitContext commit = commitUpdateTransaction(pm);
@@ -458,7 +461,11 @@ public class SentryStore {
   private Set<MSentryPrivilege> getChildPrivileges(Set<String> roleNames,
       MSentryPrivilege parent) throws SentryInvalidInputException {
     // Table and URI do not have children
-    if ((!parent.getTableName().isEmpty())||(!parent.getURI().isEmpty())) return new HashSet<MSentryPrivilege>();
+    // And grantOption is not null
+    if (((!parent.getTableName().isEmpty()) || (!parent.getURI().isEmpty()))
+        && parent.getGrantOption() != null) {
+      return new HashSet<MSentryPrivilege>();
+    }
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     try {
@@ -481,7 +488,7 @@ public class SentryStore {
       }
       query.setFilter(filters.toString());
       query
-          .setResult("privilegeScope, serverName, dbName, tableName, URI, action, grantorPrincipal");
+          .setResult("privilegeScope, serverName, dbName, tableName, URI, action, grantorPrincipal, grantOption");
       Set<MSentryPrivilege> privileges = new HashSet<MSentryPrivilege>();
       for (Object[] privObj : (List<Object[]>) query.execute()) {
         MSentryPrivilege priv = new MSentryPrivilege();
@@ -492,6 +499,7 @@ public class SentryStore {
         priv.setURI((String) privObj[4]);
         priv.setAction((String) privObj[5]);
         priv.setGrantorPrincipal((String) privObj[6]);
+        priv.setGrantOption((Boolean) privObj[7]);
         privileges.add(priv);
       }
       rollbackTransaction = false;
