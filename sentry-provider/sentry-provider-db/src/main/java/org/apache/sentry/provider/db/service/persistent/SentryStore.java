@@ -517,7 +517,7 @@ public class SentryStore {
     Boolean grantOption = null;
     if (tPriv.getGrantOption().equals(TSentryGrantOption.TRUE)) {
       grantOption = true;
-    } else if (tPriv.getGrantOption().equals(TSentryGrantOption.TRUE)) {
+    } else if (tPriv.getGrantOption().equals(TSentryGrantOption.FALSE)) {
       grantOption = false;
     }
     Object obj = query.execute(grantOption);
