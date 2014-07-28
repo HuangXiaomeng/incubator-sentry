@@ -386,6 +386,162 @@ public class TestSentryStore {
   }
 
   @Test
+  public void testRevokeCheckWithGrantOption() throws Exception {
+    // 1. set local group mapping
+    // user0->group0->role0
+    // user1->group1->role1
+    // user2->group2->role2
+    String grantor = "g1";
+    String[] users = {"user0","user1","user2"};
+    String[] roles = {"role0","role1","role2"};
+    String[] groups = {"group0","group1","group2"};
+    for (int i = 0; i < users.length; i++) {
+      addGroupsToUser(users[i], groups[i]);
+      sentryStore.createSentryRole(roles[i], grantor);
+      Set<TSentryGroup> tGroups = Sets.newHashSet();
+      TSentryGroup tGroup = new TSentryGroup(groups[i]);
+      tGroups.add(tGroup);
+      sentryStore.alterSentryRoleAddGroups(grantor, roles[i], tGroups);
+    }
+    writePolicyFile();
+
+    // 2. g1 grant select on database db1 to role0, with grant option
+    String server = "server1";
+    String db = "db1";
+    String table = "tbl1";
+    String roleName = roles[0];
+    grantor = "g1";
+    TSentryPrivilege privilege1 = new TSentryPrivilege();
+    privilege1.setPrivilegeScope("DATABASE");
+    privilege1.setServerName(server);
+    privilege1.setDbName(db);
+    privilege1.setAction(AccessConstants.SELECT);
+    privilege1.setGrantorPrincipal(grantor);
+    privilege1.setCreateTime(System.currentTimeMillis());
+    privilege1.setGrantOption(TSentryGrantOption.TRUE);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege1);
+    MSentryRole role = sentryStore.getMSentryRoleByName(roleName);
+    Set<MSentryPrivilege> privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 1, privileges.size());
+
+    // 3. g1 grant all on table tb1 to role1, no grant option
+    roleName = roles[1];
+    grantor = "g1";
+    TSentryPrivilege privilege2 = new TSentryPrivilege();
+    privilege2.setPrivilegeScope("TABLE");
+    privilege2.setServerName(server);
+    privilege2.setDbName(db);
+    privilege2.setTableName(table);
+    privilege2.setAction(AccessConstants.ALL);
+    privilege2.setGrantorPrincipal(grantor);
+    privilege2.setCreateTime(System.currentTimeMillis());
+    privilege2.setGrantOption(TSentryGrantOption.FALSE);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege2);
+
+    // 4. g1 grant select on table tb1 to role2, no grant option
+    roleName = roles[2];
+    grantor = "g1";
+    TSentryPrivilege privilege3 = new TSentryPrivilege();
+    privilege3.setPrivilegeScope("TABLE");
+    privilege3.setServerName(server);
+    privilege3.setDbName(db);
+    privilege3.setTableName(table);
+    privilege3.setAction(AccessConstants.SELECT);
+    privilege3.setGrantorPrincipal(grantor);
+    privilege3.setCreateTime(System.currentTimeMillis());
+    privilege3.setGrantOption(TSentryGrantOption.FALSE);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege3);
+
+    // 5. user1 has role1, no grant option,
+    // revoke from role2 will throw no grant exception
+    roleName = roles[2];
+    grantor = users[1];
+    privilege3.setGrantorPrincipal(grantor);
+    boolean isGrantOptionException = false;
+    try {
+      sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege3);
+    } catch (SentryNoGrantOpitonException e) {
+      isGrantOptionException = true;
+      System.err.println(e.getMessage());
+    }
+    assertTrue(isGrantOptionException);
+
+    // 6. user0 has role0, only have select,
+    // revoke all from role1 will throw no grant exception
+    roleName = roles[1];
+    grantor = users[0];
+    privilege2.setGrantorPrincipal(grantor);
+    try {
+      sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege2);
+    } catch (SentryNoGrantOpitonException e) {
+      isGrantOptionException = true;
+      System.err.println(e.getMessage());
+    }
+    assertTrue(isGrantOptionException);
+
+    // 7. user0 has role0, has select and grant option,
+    // revoke select from role2
+    roleName = roles[2];
+    grantor = users[0];
+    privilege3.setGrantorPrincipal(grantor);
+    sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege3);
+    role = sentryStore.getMSentryRoleByName(roleName);
+    privileges = role.getPrivileges();
+    assertEquals(0, privileges.size());
+  }
+
+  @Test
+  public void testRevokeAllGrantOption() throws Exception {
+    // 1. set local group mapping
+    // user0->group0->role0
+    String grantor = "g1";
+    String[] users = {"user0"};
+    String[] roles = {"role0"};
+    String[] groups = {"group0"};
+    for (int i = 0; i < users.length; i++) {
+      addGroupsToUser(users[i], groups[i]);
+      sentryStore.createSentryRole(roles[i], grantor);
+      Set<TSentryGroup> tGroups = Sets.newHashSet();
+      TSentryGroup tGroup = new TSentryGroup(groups[i]);
+      tGroups.add(tGroup);
+      sentryStore.alterSentryRoleAddGroups(grantor, roles[i], tGroups);
+    }
+    writePolicyFile();
+
+    // 2. g1 grant select on table tb1 to role0, with grant option
+    String server = "server1";
+    String db = "db1";
+    String table = "tbl1";
+    String roleName = roles[0];
+    grantor = "g1";
+    TSentryPrivilege privilege = new TSentryPrivilege();
+    privilege.setPrivilegeScope("TABLE");
+    privilege.setServerName(server);
+    privilege.setDbName(db);
+    privilege.setTableName(table);
+    privilege.setAction(AccessConstants.SELECT);
+    privilege.setGrantorPrincipal(grantor);
+    privilege.setCreateTime(System.currentTimeMillis());
+    privilege.setGrantOption(TSentryGrantOption.TRUE);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege);
+
+    // 3. g1 grant select on table tb1 to role0, no grant option
+    roleName = roles[0];
+    grantor = "g1";
+    privilege.setGrantOption(TSentryGrantOption.FALSE);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege);
+
+    // 4. g1 revoke all privilege from role0
+    roleName = roles[0];
+    grantor = "g1";
+    privilege.setGrantOption(TSentryGrantOption.UNSET);
+    sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege);
+    MSentryRole role = sentryStore.getMSentryRoleByName(roleName);
+    Set<MSentryPrivilege> privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 0, privileges.size());
+  }
+
+  @Test
   public void testListSentryPrivilegesForProvider() throws Exception {
     String roleName1 = "list-privs-r1", roleName2 = "list-privs-r2";
     String groupName1 = "list-privs-g1", groupName2 = "list-privs-g2";
