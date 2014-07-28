@@ -23,6 +23,7 @@ import java.util.Set;
 
 import javax.jdo.annotations.PersistenceCapable;
 
+import org.apache.sentry.core.common.utils.PathUtils;
 import org.apache.sentry.provider.db.service.persistent.SentryStore;
 
 /**
@@ -221,5 +222,52 @@ public boolean equals(Object obj) {
 	return true;
 }
 
+  /**
+   * Return true if this privilege implies other privilege
+   * Otherwise, return false
+   * @param other, other privilege
+   */
+  public boolean implies(MSentryPrivilege other) {
+    if (!isNULL(URI) && !isNULL(other.URI)) {
+      if (!PathUtils.impliesURI(URI, other.URI)) {
+        return false;
+      }
+    } else if (isNULL(URI) && isNULL(other.URI)) {
+      if (!isNULL(serverName)) {
+        if (isNULL(other.serverName)) {
+          return false;
+        } else if (!serverName.equals(other.serverName)) {
+          return false;
+        }
+      }
+      if (!isNULL(dbName)) {
+        if (isNULL(other.dbName)) {
+          return false;
+        } else if (!dbName.equals(other.dbName)) {
+          return false;
+        }
+      }
+      if (!isNULL(tableName)) {
+        if (isNULL(other.tableName)) {
+          return false;
+        } else if (!tableName.equals(other.tableName)) {
+          return false;
+        }
+      }
+    } else {
+      return false;
+    }
+
+    if (!action.equalsIgnoreCase("*") &&
+        !action.equalsIgnoreCase(other.action)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private boolean isNULL(String s) {
+    return SentryStore.isNULL(s);
+  }
 
 }
