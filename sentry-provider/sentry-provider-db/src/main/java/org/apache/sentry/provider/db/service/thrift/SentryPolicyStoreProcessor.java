@@ -207,10 +207,10 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
       notificationHandlerInvoker.alter_sentry_role_revoke_privilege(commitContext,
           request, response);
     } catch (SentryNoSuchObjectException e) {
-      String msg = "Privilege: [server=" + request.getPrivilege().getServerName() + 
-    		  ",db=" + request.getPrivilege().getDbName() + 
-    		  ",table=" + request.getPrivilege().getTableName() + 
-    		  ",URI=" + request.getPrivilege().getURI() + 
+      String msg = "Privilege: [server=" + request.getPrivilege().getServerName() +
+    		  ",db=" + request.getPrivilege().getDbName() +
+    		  ",table=" + request.getPrivilege().getTableName() +
+    		  ",URI=" + request.getPrivilege().getURI() +
     		  ",action=" + request.getPrivilege().getAction() + "] doesn't exist.";
       LOGGER.error(msg, e);
       response.setStatus(Status.NoSuchObject(msg, e));
@@ -423,35 +423,40 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
   // retrieve the group mapping for the given user name
   private Set<String> getRequestorGroups(String userName)
       throws SentryUserException {
-      String groupMapping = conf.get(ServerConfig.SENTRY_STORE_GROUP_MAPPING,
-          ServerConfig.SENTRY_STORE_GROUP_MAPPING_DEFAULT);
-      String authResoruce = conf
-          .get(ServerConfig.SENTRY_STORE_GROUP_MAPPING_RESOURCE);
+    return getGroupsFromUserName(this.conf, userName);
+  }
 
-      // load the group mapping provider class
-      GroupMappingService groupMappingService;
-      try {
-        Constructor<?> constrctor = Class.forName(groupMapping).getDeclaredConstructor(
-            Configuration.class, String.class);
-        constrctor.setAccessible(true);
-        groupMappingService = (GroupMappingService) constrctor.newInstance(new Object[] { conf,
-            authResoruce });
-      } catch (NoSuchMethodException e) {
-        throw new SentryUserException("Unable to instantiate group mapping", e);
-      } catch (SecurityException e) {
-        throw new SentryUserException("Unable to instantiate group mapping", e);
-      } catch (ClassNotFoundException e) {
-        throw new SentryUserException("Unable to instantiate group mapping", e);
-      } catch (InstantiationException e) {
-        throw new SentryUserException("Unable to instantiate group mapping", e);
-      } catch (IllegalAccessException e) {
-        throw new SentryUserException("Unable to instantiate group mapping", e);
-      } catch (IllegalArgumentException e) {
-        throw new SentryUserException("Unable to instantiate group mapping", e);
-      } catch (InvocationTargetException e) {
-        throw new SentryUserException("Unable to instantiate group mapping", e);
-      }
-      return groupMappingService.getGroups(userName);
+  public static Set<String> getGroupsFromUserName(Configuration conf,
+      String userName) throws SentryUserException {
+    String groupMapping = conf.get(ServerConfig.SENTRY_STORE_GROUP_MAPPING,
+        ServerConfig.SENTRY_STORE_GROUP_MAPPING_DEFAULT);
+    String authResoruce = conf
+        .get(ServerConfig.SENTRY_STORE_GROUP_MAPPING_RESOURCE);
+
+    // load the group mapping provider class
+    GroupMappingService groupMappingService;
+    try {
+      Constructor<?> constrctor = Class.forName(groupMapping)
+          .getDeclaredConstructor(Configuration.class, String.class);
+      constrctor.setAccessible(true);
+      groupMappingService = (GroupMappingService) constrctor
+          .newInstance(new Object[] { conf, authResoruce });
+    } catch (NoSuchMethodException e) {
+      throw new SentryUserException("Unable to instantiate group mapping", e);
+    } catch (SecurityException e) {
+      throw new SentryUserException("Unable to instantiate group mapping", e);
+    } catch (ClassNotFoundException e) {
+      throw new SentryUserException("Unable to instantiate group mapping", e);
+    } catch (InstantiationException e) {
+      throw new SentryUserException("Unable to instantiate group mapping", e);
+    } catch (IllegalAccessException e) {
+      throw new SentryUserException("Unable to instantiate group mapping", e);
+    } catch (IllegalArgumentException e) {
+      throw new SentryUserException("Unable to instantiate group mapping", e);
+    } catch (InvocationTargetException e) {
+      throw new SentryUserException("Unable to instantiate group mapping", e);
+    }
+    return groupMappingService.getGroups(userName);
   }
 
   @Override
