@@ -17,6 +17,7 @@
 package org.apache.sentry.policy.db;
 
 import static org.apache.sentry.provider.file.PolicyFileConstants.AUTHORIZABLE_SPLITTER;
+import static org.apache.sentry.provider.file.PolicyFileConstants.GRANTOPTION_PREFIX;
 import static org.apache.sentry.provider.file.PolicyFileConstants.PRIVILEGE_PREFIX;
 
 import java.util.List;
@@ -35,7 +36,8 @@ public abstract class AbstractDBPrivilegeValidator implements PrivilegeValidator
     List<DBModelAuthorizable> result = Lists.newArrayList();
     for(String section : AUTHORIZABLE_SPLITTER.split(string)) {
       // XXX this ugly hack is because action is not an authorizeable
-      if(!section.toLowerCase().startsWith(PRIVILEGE_PREFIX)) {
+      if(!section.toLowerCase().startsWith(PRIVILEGE_PREFIX)
+          && !section.toLowerCase().startsWith(GRANTOPTION_PREFIX)) {
         DBModelAuthorizable authorizable = DBModelAuthorizables.from(section);
         if(authorizable == null) {
           String msg = "No authorizable found for " + section;

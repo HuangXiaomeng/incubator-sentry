@@ -21,7 +21,10 @@ import java.util.Map;
 
 public class StaticUserGroup {
   public static String ADMIN1,ADMINGROUP;
+
   public static final String
+      SUBADMIN = "sub_admin",
+      SUBADMINGROUP = "sub_admin_group",
       USER1_1 = "user1_1",
       USER1_2 = "user1_2",
       USER2_1 = "user2_1",
@@ -39,6 +42,7 @@ public class StaticUserGroup {
     ADMINGROUP = System.getProperty("sentry.e2etest.admin.group", "admin");
     staticMapping = new HashMap<String, String>();
     staticMapping.put(ADMIN1, ADMINGROUP);
+    staticMapping.put(SUBADMIN, SUBADMINGROUP);
     staticMapping.put(USER1_1, USERGROUP1);
     staticMapping.put(USER1_2, USERGROUP1);
     staticMapping.put(USER2_1, USERGROUP2);

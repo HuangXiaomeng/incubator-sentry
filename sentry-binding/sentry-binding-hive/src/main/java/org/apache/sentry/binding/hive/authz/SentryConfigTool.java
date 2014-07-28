@@ -17,6 +17,9 @@
 
 package org.apache.sentry.binding.hive.authz;
 
+import static org.apache.sentry.provider.common.ProviderConstants.GRANTOPTION_NAME;
+import static org.apache.sentry.provider.common.ProviderConstants.PRIVILEGE_NAME;
+
 import com.google.common.collect.Table;
 
 import org.apache.commons.cli.CommandLine;
@@ -44,6 +47,7 @@ import org.apache.sentry.binding.hive.conf.HiveAuthzConf.AuthzConfVars;
 import org.apache.sentry.core.common.SentryConfigurationException;
 import org.apache.sentry.core.common.Subject;
 import org.apache.sentry.core.model.db.AccessConstants;
+import org.apache.sentry.core.model.db.DBModelAction;
 import org.apache.sentry.core.model.db.DBModelAuthorizable;
 import org.apache.sentry.core.model.db.Server;
 import org.apache.sentry.policy.db.DBModelAuthorizables;
@@ -54,6 +58,7 @@ import org.apache.sentry.provider.db.service.thrift.TSentryRole;
 import org.apache.sentry.provider.file.KeyValue;
 import org.apache.sentry.provider.file.PolicyFileConstants;
 import org.apache.sentry.provider.file.SimpleFileProviderBackend;
+import org.apache.tools.ant.util.StringUtils;
 
 import java.security.CodeSource;
 import java.sql.Connection;
@@ -292,12 +297,18 @@ public class SentryConfigTool {
           String table = null;
           String uri = null;
           String action = AccessConstants.ALL;
+          boolean grantOption = false;
           for (String authorizable : PolicyFileConstants.AUTHORIZABLE_SPLITTER.
               trimResults().split(permission)) {
             KeyValue kv = new KeyValue(authorizable);
             DBModelAuthorizable a = DBModelAuthorizables.from(kv);
             if (a == null) {
-              action = kv.getValue();
+              if (kv.getKey().toLowerCase().startsWith(PRIVILEGE_NAME)) {
+                action = kv.getValue();
+              } else if (kv.getKey().toLowerCase().startsWith(GRANTOPTION_NAME)){
+                grantOption = ("1".equals(kv.getValue()) ||
+                    "true".equals(kv.getValue().toLowerCase())) ? true : false;
+              }
               continue;
             }
 
@@ -320,33 +331,34 @@ public class SentryConfigTool {
             }
           }
 
+          String grantOptionLog = grantOption ? "WITH GRANT OPTION" : "";
           if (uri != null) {
             System.out.println(String.format(
-                "GRANT ALL ON URI %s TO ROLE %s; # server=%s",
+                "GRANT ALL ON URI %s TO ROLE %s; # server=%s" + grantOptionLog,
                 uri, roleName, server));
 
-            client.grantURIPrivilege(requestorUserName, roleName, server, uri);
+            client.grantURIPrivilege(requestorUserName, roleName, server, uri, grantOption);
           } else if (table != null && !AccessConstants.ALL.equals(table)) {
             System.out.println(String.format(
-                "GRANT %s ON TABLE %s TO ROLE %s; # server=%s, database=%s",
+                "GRANT %s ON TABLE %s TO ROLE %s; # server=%s, database=%s" + grantOptionLog,
                 "*".equals(action) ? "ALL" : action.toUpperCase(), table,
                 roleName, server, database));
 
             client.grantTablePrivilege(requestorUserName, roleName, server,
-                database, table, action);
+                database, table, action, grantOption);
           } else if (database != null && !AccessConstants.ALL.equals(database)) {
             System.out.println(String.format(
-                "GRANT %s ON DATABASE %s TO ROLE %s; # server=%s",
+                "GRANT %s ON DATABASE %s TO ROLE %s " + grantOptionLog + "; # server=%s",
                 "*".equals(action) ? "ALL" : action.toUpperCase(),
                 database, roleName, server));
 
             client.grantDatabasePrivilege(requestorUserName, roleName, server,
-                database, action);
+                database, action, grantOption);
           } else if (server != null) {
-            System.out.println(String.format("GRANT ALL ON SERVER %s TO ROLE %s;",
+            System.out.println(String.format("GRANT ALL ON SERVER %s TO ROLE %s;" + grantOptionLog,
                 server, roleName));
 
-            client.grantServerPrivilege(requestorUserName, roleName, server);
+            client.grantServerPrivilege(requestorUserName, roleName, server, grantOption);
           } else {
             System.out.println(String.format("No grant for permission %s",
                 permission));

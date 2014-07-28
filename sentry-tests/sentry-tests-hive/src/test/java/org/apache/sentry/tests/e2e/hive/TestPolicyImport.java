@@ -25,6 +25,7 @@ import org.apache.sentry.SentryUserException;
 import org.apache.sentry.binding.hive.authz.SentryConfigTool;
 import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.provider.db.service.thrift.SentryPolicyServiceClient;
+import org.apache.sentry.provider.db.service.thrift.TSentryGrantOption;
 import org.apache.sentry.provider.db.service.thrift.TSentryPrivilege;
 import org.apache.sentry.provider.db.service.thrift.TSentryRole;
 import org.apache.sentry.provider.file.PolicyFile;
@@ -50,6 +51,8 @@ public class TestPolicyImport extends AbstractTestWithStaticConfiguration {
     policyFile.addGroupsToUser("hive", ADMINGROUP);
     policyFile.addGroupsToUser(ADMIN1, ADMINGROUP);
 
+    policyFile.addGroupsToUser(SUBADMIN, SUBADMINGROUP);
+
     configTool = new SentryConfigTool();
     String hiveServer2 = System.getProperty("sentry.e2etest.hiveServer2Type",
         "InternalHiveServer2");
@@ -73,10 +76,12 @@ public class TestPolicyImport extends AbstractTestWithStaticConfiguration {
     policyFile.addRolesToGroup("manager", "analyst_role",  "junior_analyst_role",
         "customers_insert_role", "customers_select_role");
     policyFile.addRolesToGroup("customers_admin", "customers_admin_role");
+    policyFile.addRolesToGroup("junior_analyst_grantor", "junior_analyst_grantor_role");
 
     policyFile.addPermissionsToRole("analyst_role", "server=server1->db=analyst_db",
         "server=server1->db=jranalyst_db->table=*->action=select");
     policyFile.addPermissionsToRole("junior_analyst_role", "server=server1->db=jranalyst_db");
+    policyFile.addPermissionsToRole("junior_analyst_grantor_role", "server=server1->db=jranalyst_db->grant=true");
     policyFile.addPermissionsToRole("customers_admin_role", "server=server1->db=customers");
     policyFile.addPermissionsToRole("customers_insert_role", "server=server1->db=customers->table=*->action=insert");
     policyFile.addPermissionsToRole("customers_select_role", "server=server1->db=customers->table=*->action=select");
@@ -95,6 +100,7 @@ public class TestPolicyImport extends AbstractTestWithStaticConfiguration {
     verifyRoles(client, "manager", "analyst_role", "junior_analyst_role",
         "customers_insert_role", "customers_select_role");
     verifyRoles(client, "customers_admin", "customers_admin_role");
+    verifyRoles(client, "junior_analyst_grantor", "junior_analyst_grantor_role");
 
     verifyPrivileges(client, "analyst_role",
         createPrivilege(AccessConstants.ALL, "analyst_db", null, null),
@@ -107,6 +113,8 @@ public class TestPolicyImport extends AbstractTestWithStaticConfiguration {
         createPrivilege(AccessConstants.INSERT, "customers", null, null));
     verifyPrivileges(client, "customers_select_role",
         createPrivilege(AccessConstants.SELECT, "customers", null, null));
+    verifyPrivileges(client, "junior_analyst_grantor_role",
+        createPrivilege(AccessConstants.ALL, "jranalyst_db", null, null, true));
   }
 
   private void verifyRoles(SentryPolicyServiceClient client, String group, String ... roles) throws SentryUserException {
@@ -133,14 +141,18 @@ public class TestPolicyImport extends AbstractTestWithStaticConfiguration {
   }
 
   private TSentryPrivilege createPrivilege(String action, String dbName, String tableName, String uri) {
-    String scope = "SERVER";
+    return createPrivilege(action, dbName, tableName, uri, false);
+  }
+
+  private TSentryPrivilege createPrivilege(String action, String dbName, String tableName, String uri, boolean grantOption) {
+    String scope = "server";
     if (uri != null) {
-      scope = "URI";
+      scope = "uri";
     } else if (dbName != null) {
       if (tableName != null) {
-        scope = "TABLE";
+        scope = "table";
       } else  {
-        scope = "DATABASE";
+        scope = "database";
       }
     }
 
@@ -157,7 +169,10 @@ public class TestPolicyImport extends AbstractTestWithStaticConfiguration {
       privilege.setURI(uri);
     }
 
+    if (grantOption == true) {
+      privilege.setGrantOption(TSentryGrantOption.TRUE);
+    }
+
     return privilege;
   }
-
 }

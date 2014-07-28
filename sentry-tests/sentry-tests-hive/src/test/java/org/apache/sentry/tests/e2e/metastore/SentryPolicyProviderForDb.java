@@ -18,6 +18,7 @@ package org.apache.sentry.tests.e2e.metastore;
 
 import static org.apache.sentry.provider.common.ProviderConstants.AUTHORIZABLE_SPLITTER;
 import static org.apache.sentry.provider.common.ProviderConstants.PRIVILEGE_PREFIX;
+import static org.apache.sentry.provider.common.ProviderConstants.GRANTOPTION_PREFIX;
 import static org.apache.sentry.provider.common.ProviderConstants.ROLE_SPLITTER;
 import static org.apache.sentry.tests.e2e.hive.StaticUserGroup.ADMIN1;
 import static org.apache.sentry.tests.e2e.hive.StaticUserGroup.ADMINGROUP;
@@ -106,49 +107,53 @@ public class SentryPolicyProviderForDb extends PolicyFile {
       throws Exception {
     String serverName = null, dbName = null, tableName = null, uriPath = null;
     String action = AccessConstants.ALL;
+    boolean grantOption = false;
     for (String privilege : ROLE_SPLITTER.split(privileges)) {
       for (String section : AUTHORIZABLE_SPLITTER.split(privilege)) {
-        // action is not an authorizeable
-        if (!section.toLowerCase().startsWith(PRIVILEGE_PREFIX)) {
-          DBModelAuthorizable dbAuthorizable = DBModelAuthorizables
-              .from(section);
-          if (dbAuthorizable == null) {
-            throw new IOException("Unknow Auth type " + section);
-          }
-
-          if (AuthorizableType.Server.equals(dbAuthorizable.getAuthzType())) {
-            serverName = dbAuthorizable.getName();
-          } else if (AuthorizableType.Db.equals(dbAuthorizable.getAuthzType())) {
-            dbName = dbAuthorizable.getName();
-          } else if (AuthorizableType.Table.equals(dbAuthorizable
-              .getAuthzType())) {
-            tableName = dbAuthorizable.getName();
-          } else if (AuthorizableType.URI.equals(dbAuthorizable.getAuthzType())) {
-            uriPath = dbAuthorizable.getName();
-          } else {
-            throw new IOException("Unsupported auth type "
-                + dbAuthorizable.getName() + " : "
-                + dbAuthorizable.getTypeName());
-          }
-        } else {
+        // action or grant option is not an authorizeable
+        if (section.toLowerCase().startsWith(PRIVILEGE_PREFIX)) {
           action = DBModelAction
               .valueOf(
                   StringUtils.removePrefix(section, PRIVILEGE_PREFIX)
                       .toUpperCase()).toString();
+        } else if (section.toLowerCase().startsWith(GRANTOPTION_PREFIX)) {
+          String grantString = StringUtils.removePrefix(section, PRIVILEGE_PREFIX);
+          grantOption = ("1".equals(grantString)||
+              "true".equals(grantString.toLowerCase())) ? true : false;
+        } else {
+          DBModelAuthorizable dbAuthorizable = DBModelAuthorizables
+                .from(section);
+            if (dbAuthorizable == null) {
+              throw new IOException("Unknow Auth type " + section);
+            }
+
+            if (AuthorizableType.Server.equals(dbAuthorizable.getAuthzType())) {
+              serverName = dbAuthorizable.getName();
+            } else if (AuthorizableType.Db.equals(dbAuthorizable.getAuthzType())) {
+              dbName = dbAuthorizable.getName();
+            } else if (AuthorizableType.Table.equals(dbAuthorizable
+                .getAuthzType())) {
+              tableName = dbAuthorizable.getName();
+            } else if (AuthorizableType.URI.equals(dbAuthorizable.getAuthzType())) {
+              uriPath = dbAuthorizable.getName();
+            } else {
+              throw new IOException("Unsupported auth type "
+                  + dbAuthorizable.getName() + " : "
+                  + dbAuthorizable.getTypeName());
+            }
         }
       }
 
       if (tableName != null) {
         sentryClient.grantTablePrivilege(ADMIN1, roleName, serverName, dbName,
-            tableName, action);
+            tableName, action, grantOption);
       } else if (dbName != null) {
         sentryClient.grantDatabasePrivilege(ADMIN1, roleName, serverName,
-            dbName, action);
+            dbName, action, grantOption);
       } else if (uriPath != null) {
-        sentryClient.grantURIPrivilege(ADMIN1, roleName, serverName, uriPath);
+        sentryClient.grantURIPrivilege(ADMIN1, roleName, serverName, uriPath, grantOption);
       } else if (serverName != null) {
-        sentryClient.grantServerPrivilege(ADMIN1, roleName, serverName);
-        ;
+        sentryClient.grantServerPrivilege(ADMIN1, roleName, serverName, grantOption);
       }
     }
 

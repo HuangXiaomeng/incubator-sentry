@@ -35,4 +35,7 @@ public class ProviderConstants {
   // TODO change to privilege
   public static final String PRIVILEGE_NAME = "action";
   public static final String PRIVILEGE_PREFIX = (PRIVILEGE_NAME + KV_SEPARATOR).toLowerCase();
+
+  public static final String GRANTOPTION_NAME = "grant";
+  public static final String GRANTOPTION_PREFIX = (GRANTOPTION_NAME + KV_SEPARATOR).toLowerCase();
 }

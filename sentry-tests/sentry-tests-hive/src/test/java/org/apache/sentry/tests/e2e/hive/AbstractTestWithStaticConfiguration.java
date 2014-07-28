@@ -82,6 +82,8 @@ public abstract class AbstractTestWithStaticConfiguration {
       SELECT_DB1_VIEW1 = "server=server1->db=db_1->table=view_1->action=select",
       ADMIN1 = StaticUserGroup.ADMIN1,
       ADMINGROUP = StaticUserGroup.ADMINGROUP,
+      SUBADMIN = StaticUserGroup.SUBADMINGROUP,
+      SUBADMINGROUP = StaticUserGroup.SUBADMINGROUP,
       USER1_1 = StaticUserGroup.USER1_1,
       USER1_2 = StaticUserGroup.USER1_2,
       USER2_1 = StaticUserGroup.USER2_1,
