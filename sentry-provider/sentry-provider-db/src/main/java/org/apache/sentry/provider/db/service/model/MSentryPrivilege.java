@@ -61,6 +61,7 @@ public class MSentryPrivilege {
     this.tableName = SentryStore.toNULLCol(tableName);
     this.URI = SentryStore.toNULLCol(URI);
     this.action = SentryStore.toNULLCol(action);
+    this.grantOption = grantOption;
     this.roles = new HashSet<MSentryRole>();
   }
 
