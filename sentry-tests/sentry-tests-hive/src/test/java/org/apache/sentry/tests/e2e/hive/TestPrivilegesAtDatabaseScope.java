@@ -418,4 +418,81 @@ public class TestPrivilegesAtDatabaseScope extends AbstractTestWithStaticConfigu
     context.close();
   }
 
+  /**
+   * Test access to default DB with out of box authz config
+   * All users should be able to switch to default, including the users that don't have any
+   * privilege on default db objects via policy file
+   * @throws Exception
+   */
+  @Test
+  public void testDefaultDbPrivilegeGrant() throws Exception {
+
+    policyFile
+        .addRolesToGroup(USERGROUP1_GRANT, "all_db1")
+        .addRolesToGroup(USERGROUP2_GRANT, "select_db2")
+        .addRolesToGroup(USERGROUP3_GRANT, "all_default")
+        .addPermissionsToRole("all_db1", "server=server1->db=DB_1")
+        .addPermissionsToRole("select_db2", "server=server1->db=DB_2->table=tab_2->action=select")
+        .addPermissionsToRole("all_default", "server=server1->db=default")
+        .setUserGroupMapping(StaticUserGroup.getStaticMapping());
+    writePolicyFile(policyFile);
+
+
+    Connection connection = context.createConnection(USER3_G);
+    Statement statement = context.createStatement(connection);
+    statement.execute("use default");
+    statement.execute("create table tab1(a int)");
+    context.close();
+
+    connection = context.createConnection(USER1_G);
+    statement = context.createStatement(connection);
+    statement.execute("use default");
+    try {
+      statement.execute("select * from tab1");
+      assertTrue("Should not be allowed !!", false);
+    } catch (Exception e) {
+      // Ignore
+    }
+    context.close();
+
+    connection = context.createConnection(USER2_G);
+    statement = context.createStatement(connection);
+    statement.execute("use default");
+    context.close();
+
+    connection = context.createConnection(USER3_G);
+    statement = context.createStatement(connection);
+    statement.execute("use default");
+    statement.execute("grant select on database default to USER " + USER2_G + " WITH GRANT OPTION");
+    context.close();
+    /*
+    connection = context.createConnection(USER3_G);
+    statement = context.createStatement(connection);
+    statement.execute("use default");
+    try {
+      statement.execute("create table tab1(a int)");
+      //statement.execute("set hive.security.authorization.enabled=true");
+      //statement.execute("set hive.security.authorization.task.factory=org.apache.hadoop.hive.ql.parse.authorization.HiveAuthorizationTaskFactoryImpl");
+      //statement.execute("grant select on database default to USER " + USER4_G + " WITH GRANT OPTION");
+    } catch (Exception e) {
+      throw e;
+    }
+    context.close();
+
+    connection = context.createConnection(USER4_G);
+    statement = context.createStatement(connection);
+    statement.execute("use default");
+    try {
+      statement.execute("grant select on database default to USER " + USER4_G);
+      assertTrue("Should not be allowed !!", false);
+    } catch (Exception e) {
+      // ignore
+    }
+    context.close();*/
+/*
+    connection = context.createConnection(USER3_1);
+    statement = context.createStatement(connection);
+    statement.execute("use default");
+    context.close();*/
+  }
 }

@@ -197,6 +197,7 @@ public class HiveServerFactory {
         "org.apache.sentry.binding.hive.HiveAuthzBindingSessionHook");
     }
     hiveConf.set(HIVESERVER2_IMPERSONATION, "false");
+    //hiveConf.set("hive.security.authorization.task.factory","org.apache.sentry.binding.hive.SentryHiveAuthorizationTaskFactoryImp");
     out = new FileOutputStream(hiveSite);
     hiveConf.writeXml(out);
     out.close();

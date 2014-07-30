@@ -99,16 +99,16 @@
         <column name="PRIVILEGE_SCOPE" length="40" jdbc-type="VARCHAR"/>
       </field>
       <field name="serverName">  
-        <column name="SERVER_NAME" length="4000" jdbc-type="VARCHAR"/>
+        <column name="SERVER_NAME" length="100" jdbc-type="VARCHAR"/>
       </field>
       <field name="dbName">  
-        <column name="DB_NAME" length="4000" jdbc-type="VARCHAR"/>
+        <column name="DB_NAME" length="100" jdbc-type="VARCHAR"/>
       </field>
       <field name="tableName">  
-        <column name="TABLE_NAME" length="4000" jdbc-type="VARCHAR"/>
+        <column name="TABLE_NAME" length="100" jdbc-type="VARCHAR"/>
       </field>
       <field name="URI">  
-        <column name="URI" length="4000" jdbc-type="VARCHAR"/>
+        <column name="URI" length="100" jdbc-type="VARCHAR"/>
       </field>
       <field name="action">  
         <column name="ACTION" length="40" jdbc-type="VARCHAR"/>
@@ -117,7 +117,7 @@
       	<column name = "CREATE_TIME" jdbc-type="BIGINT"/>
       </field>
       <field name="grantorPrincipal">  
-        <column name="GRANTOR_PRINCIPAL" length="4000" jdbc-type="VARCHAR"/>
+        <column name="GRANTOR_PRINCIPAL" length="100" jdbc-type="VARCHAR"/>
       </field>
       <field name="grantOption">
         <column name="WITH_GRANT_OPTION" length="1" jdbc-type="CHAR"/>

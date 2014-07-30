@@ -82,17 +82,23 @@ public abstract class AbstractTestWithStaticConfiguration {
       SELECT_DB1_VIEW1 = "server=server1->db=db_1->table=view_1->action=select",
       ADMIN1 = StaticUserGroup.ADMIN1,
       ADMINGROUP = StaticUserGroup.ADMINGROUP,
-      SUBADMIN = StaticUserGroup.SUBADMINGROUP,
-      SUBADMINGROUP = StaticUserGroup.SUBADMINGROUP,
       USER1_1 = StaticUserGroup.USER1_1,
       USER1_2 = StaticUserGroup.USER1_2,
       USER2_1 = StaticUserGroup.USER2_1,
       USER3_1 = StaticUserGroup.USER3_1,
       USER4_1 = StaticUserGroup.USER4_1,
+      USER1_G = StaticUserGroup.USER1_G,
+      USER2_G = StaticUserGroup.USER2_G,
+      USER3_G = StaticUserGroup.USER3_G,
+      USER4_G = StaticUserGroup.USER4_G,
       USERGROUP1 = StaticUserGroup.USERGROUP1,
+      USERGROUP1_GRANT = StaticUserGroup.USERGROUP1_GRANT,
       USERGROUP2 = StaticUserGroup.USERGROUP2,
+      USERGROUP2_GRANT = StaticUserGroup.USERGROUP2_GRANT,
       USERGROUP3 = StaticUserGroup.USERGROUP3,
+      USERGROUP3_GRANT = StaticUserGroup.USERGROUP3_GRANT,
       USERGROUP4 = StaticUserGroup.USERGROUP4,
+      USERGROUP4_GRANT = StaticUserGroup.USERGROUP4_GRANT,
       GROUP1_ROLE = "group1_role",
       DB1 = "db_1",
       DB2 = "db_2",
@@ -344,6 +350,10 @@ public abstract class AbstractTestWithStaticConfiguration {
         String.valueOf(sentryServer.getAddress().getPort()));
     sentryConf.set(ClientConfig.SERVER_RPC_PORT,
         String.valueOf(sentryServer.getAddress().getPort()));
+    properties.put(ConfVars.HIVE_AUTHORIZATION_TASK_FACTORY.varname,
+        SentryHiveAuthorizationTaskFactoryImpl.class.getName());
+    sentryConf.set(ConfVars.HIVE_AUTHORIZATION_TASK_FACTORY.varname,
+        SentryHiveAuthorizationTaskFactoryImpl.class.getName());
     startSentryService();
     if (setMetastoreListener) {
       properties.put(HiveConf.ConfVars.METASTORE_EVENT_LISTENERS.varname,

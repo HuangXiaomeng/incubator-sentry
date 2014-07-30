@@ -17,9 +17,7 @@
  */
 package org.apache.sentry.provider.db;
 
-import org.apache.sentry.SentryUserException;
-
-public class SentryNoGrantOpitonException extends SentryUserException {
+public class SentryNoGrantOpitonException extends SentryAccessDeniedException {
   private static final long serialVersionUID = 1962330785835L;
   public SentryNoGrantOpitonException(String msg) {
     super(msg);

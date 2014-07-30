@@ -51,8 +51,6 @@ public class TestPolicyImport extends AbstractTestWithStaticConfiguration {
     policyFile.addGroupsToUser("hive", ADMINGROUP);
     policyFile.addGroupsToUser(ADMIN1, ADMINGROUP);
 
-    policyFile.addGroupsToUser(SUBADMIN, SUBADMINGROUP);
-
     configTool = new SentryConfigTool();
     String hiveServer2 = System.getProperty("sentry.e2etest.hiveServer2Type",
         "InternalHiveServer2");

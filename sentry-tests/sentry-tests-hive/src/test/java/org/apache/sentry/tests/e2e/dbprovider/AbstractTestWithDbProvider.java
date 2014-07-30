@@ -79,8 +79,13 @@ public abstract class AbstractTestWithDbProvider extends AbstractTestWithHiveSer
     properties.put(ServerConfig.RPC_ADDRESS, SERVER_HOST);
     properties.put(ServerConfig.RPC_PORT, String.valueOf(0));
     dbDir = new File(Files.createTempDir(), "sentry_policy_db");
-    properties.put(ServerConfig.SENTRY_STORE_JDBC_URL,
-        "jdbc:derby:;databaseName=" + dbDir.getPath() + ";create=true");
+    /*properties.put(ServerConfig.SENTRY_STORE_JDBC_URL,
+        "jdbc:derby:;databaseName=" + dbDir.getPath() + ";create=true");*/
+    properties.put(ServerConfig.SENTRY_STORE_JDBC_URL,"jdbc:mysql://bdpe21.sh.intel.com:3306/t3?createDatabaseIfNotExist=true&characterEncoding=UTF-8");
+    properties.put(ServerConfig.SENTRY_STORE_JDBC_USER, "root");
+    properties.put(ServerConfig.SENTRY_STORE_JDBC_PASS, "password");
+    properties.put(ServerConfig.SENTRY_STORE_JDBC_DRIVER,
+            "com.mysql.jdbc.Driver");
     properties.put(ServerConfig.SENTRY_VERIFY_SCHEM_VERSION, "false");
     properties.put(ServerConfig.SENTRY_STORE_GROUP_MAPPING,
         ServerConfig.SENTRY_STORE_LOCAL_GROUP_MAPPING);

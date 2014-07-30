@@ -167,8 +167,6 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
 
     TAlterSentryRoleGrantPrivilegeResponse response = new TAlterSentryRoleGrantPrivilegeResponse();
     try {
-      authorize(request.getRequestorUserName(),
-          getRequestorGroups(request.getRequestorUserName()));
       CommitContext commitContext = sentryStore.alterSentryRoleGrantPrivilege(request.getRoleName(),
                                     request.getPrivilege());
       response.setStatus(Status.OK());
@@ -199,8 +197,6 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
   (TAlterSentryRoleRevokePrivilegeRequest request) throws TException {
     TAlterSentryRoleRevokePrivilegeResponse response = new TAlterSentryRoleRevokePrivilegeResponse();
     try {
-      authorize(request.getRequestorUserName(),
-          getRequestorGroups(request.getRequestorUserName()));
       CommitContext commitContext = sentryStore.alterSentryRoleRevokePrivilege(request.getRoleName(),
                                     request.getPrivilege());
       response.setStatus(Status.OK());

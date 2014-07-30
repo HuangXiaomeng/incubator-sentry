@@ -23,17 +23,23 @@ public class StaticUserGroup {
   public static String ADMIN1,ADMINGROUP;
 
   public static final String
-      SUBADMIN = "sub_admin",
-      SUBADMINGROUP = "sub_admin_group",
       USER1_1 = "user1_1",
       USER1_2 = "user1_2",
       USER2_1 = "user2_1",
       USER3_1 = "user3_1",
       USER4_1 = "user4_1",
+      USER1_G = "user1_g",
+      USER2_G = "user2_g",
+      USER3_G = "user3_g",
+      USER4_G = "user4_g",
       USERGROUP1 = "user_group1",
       USERGROUP2 = "user_group2",
       USERGROUP3 = "user_group3",
-      USERGROUP4 = "user_group4";
+      USERGROUP4 = "user_group4",
+      USERGROUP1_GRANT = "user_group1_grant",
+      USERGROUP2_GRANT = "user_group2_grant",
+      USERGROUP3_GRANT = "user_group3_grant",
+      USERGROUP4_GRANT = "user_group4_grant";
   private static final Map<String, String> staticMapping;
 
   static {
@@ -42,12 +48,15 @@ public class StaticUserGroup {
     ADMINGROUP = System.getProperty("sentry.e2etest.admin.group", "admin");
     staticMapping = new HashMap<String, String>();
     staticMapping.put(ADMIN1, ADMINGROUP);
-    staticMapping.put(SUBADMIN, SUBADMINGROUP);
     staticMapping.put(USER1_1, USERGROUP1);
     staticMapping.put(USER1_2, USERGROUP1);
     staticMapping.put(USER2_1, USERGROUP2);
     staticMapping.put(USER3_1, USERGROUP3);
     staticMapping.put(USER4_1, USERGROUP4);
+    staticMapping.put(USER1_G, USERGROUP1_GRANT);
+    staticMapping.put(USER2_G, USERGROUP2_GRANT);
+    staticMapping.put(USER3_G, USERGROUP3_GRANT);
+    staticMapping.put(USER4_G, USERGROUP4_GRANT);
   }
 
   public static Map<String, String> getStaticMapping(){
