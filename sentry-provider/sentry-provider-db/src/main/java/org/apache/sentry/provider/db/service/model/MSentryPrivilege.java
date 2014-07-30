@@ -24,8 +24,7 @@ import java.util.Set;
 import javax.jdo.annotations.PersistenceCapable;
 
 import org.apache.sentry.core.common.utils.PathUtils;
-
-import com.google.common.base.Strings;
+import org.apache.sentry.provider.db.service.persistent.SentryStore;
 
 /**
  * Database backed Sentry Privilege. Any changes to this object
@@ -58,11 +57,10 @@ public class MSentryPrivilege {
       String action, Boolean grantOption) {
     this.privilegeScope = privilegeScope;
     this.serverName = serverName;
-    this.dbName = Strings.nullToEmpty(dbName);
-    this.tableName = Strings.nullToEmpty(tableName);
-    this.URI = Strings.nullToEmpty(URI);
-    this.action = Strings.nullToEmpty(action);
-    this.grantOption = grantOption;
+    this.dbName = SentryStore.toNULLCol(dbName);
+    this.tableName = SentryStore.toNULLCol(tableName);
+    this.URI = SentryStore.toNULLCol(URI);
+    this.action = SentryStore.toNULLCol(action);
     this.roles = new HashSet<MSentryRole>();
   }
 
@@ -170,16 +168,16 @@ public class MSentryPrivilege {
 
 @Override
 public int hashCode() {
-	final int prime = 31;
-	int result = 1;
-	result = prime * result + ((URI == null) ? 0 : URI.hashCode());
-	result = prime * result + ((action == null) ? 0 : action.hashCode());
-	result = prime * result + ((dbName == null) ? 0 : dbName.hashCode());
-	result = prime * result
-			+ ((serverName == null) ? 0 : serverName.hashCode());
-	result = prime * result + ((tableName == null) ? 0 : tableName.hashCode());
-	result = prime * result + ((grantOption == null) ? 0 : grantOption.hashCode());
-	return result;
+  final int prime = 31;
+  int result = 1;
+  result = prime * result + ((URI == null) ? 0 : URI.hashCode());
+  result = prime * result + ((action == null) ? 0 : action.hashCode());
+  result = prime * result + ((dbName == null) ? 0 : dbName.hashCode());
+  result = prime * result
+		+ ((serverName == null) ? 0 : serverName.hashCode());
+  result = prime * result + ((tableName == null) ? 0 : tableName.hashCode());
+  result = prime * result + ((grantOption == null) ? 0 : grantOption.hashCode());
+  return result;
 }
 
 @Override
@@ -230,27 +228,27 @@ public boolean equals(Object obj) {
    * @param other, other privilege
    */
   public boolean implies(MSentryPrivilege other) {
-    if (!URI.equals("") && !other.URI.equals("")) {
+    if (!isNULL(URI) && !isNULL(other.URI)) {
       if (!PathUtils.impliesURI(URI, other.URI)) {
         return false;
       }
-    } else if (URI.equals("") && other.URI.equals("")) {
-      if (!serverName.equals("")) {
-        if (other.serverName.equals("")) {
+    } else if (isNULL(URI) && isNULL(other.URI)) {
+      if (!isNULL(serverName)) {
+        if (isNULL(other.serverName)) {
           return false;
         } else if (!serverName.equals(other.serverName)) {
           return false;
         }
       }
-      if (!dbName.equals("")) {
-        if (other.dbName.equals("")) {
+      if (!isNULL(dbName)) {
+        if (isNULL(other.dbName)) {
           return false;
         } else if (!dbName.equals(other.dbName)) {
           return false;
         }
       }
-      if (!tableName.equals("")) {
-        if (other.tableName.equals("")) {
+      if (!isNULL(tableName)) {
+        if (isNULL(other.tableName)) {
           return false;
         } else if (!tableName.equals(other.tableName)) {
           return false;
@@ -266,6 +264,10 @@ public boolean equals(Object obj) {
     }
 
     return true;
+  }
+
+  private boolean isNULL(String s) {
+    return SentryStore.isNULL(s);
   }
 
 }

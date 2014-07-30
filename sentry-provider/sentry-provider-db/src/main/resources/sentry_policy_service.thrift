@@ -38,7 +38,7 @@ enum TSentryGrantOption {
 # Represents a Privilege in transport from the client to the server
 struct TSentryPrivilege {
 1: required string privilegeScope, # Valid values are SERVER, DATABASE, TABLE
-3: required string serverName = "",
+3: required string serverName,
 4: optional string dbName = "",
 5: optional string tableName = "",
 6: optional string URI = "",

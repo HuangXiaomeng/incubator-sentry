@@ -87,14 +87,14 @@
       <datastore-identity>
         <column name="DB_PRIVILEGE_ID"/>
       </datastore-identity>
-      <index name="PRIVILEGE_INDEX" unique="true">
+    <index name="PRIVILEGE_INDEX" unique="true">
         <field name="serverName"/>
         <field name="dbName"/>
         <field name="tableName"/>
         <field name="URI"/>
         <field name="action"/>
         <field name="grantOption"/>
-	  </index>      
+	  </index>
       <field name="privilegeScope">  
         <column name="PRIVILEGE_SCOPE" length="40" jdbc-type="VARCHAR"/>
       </field>

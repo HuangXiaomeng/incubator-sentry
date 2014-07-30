@@ -176,8 +176,6 @@ public class TSentryPrivilege implements org.apache.thrift.TBase<TSentryPrivileg
   }
 
   public TSentryPrivilege() {
-    this.serverName = "";
-
     this.dbName = "";
 
     this.tableName = "";
@@ -240,8 +238,6 @@ public class TSentryPrivilege implements org.apache.thrift.TBase<TSentryPrivileg
   @Override
   public void clear() {
     this.privilegeScope = null;
-    this.serverName = "";
-
     this.dbName = "";
 
     this.tableName = "";
