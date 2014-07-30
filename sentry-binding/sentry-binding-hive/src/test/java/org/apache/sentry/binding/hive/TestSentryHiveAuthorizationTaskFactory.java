@@ -147,14 +147,6 @@ public class TestSentryHiveAuthorizationTaskFactory {
         .getTable());
     Assert.assertEquals(TABLE, grantDesc.getPrivilegeSubjectDesc().getObject());
   }
-  /**
-   * GRANT ... ON TABLE ... TO ROLE ... WITH GRANT OPTION
-   */
-  @Test
-  public void testGrantRoleTableWithGrantOption() throws Exception {
-    expectSemanticException("GRANT " + ALL + " ON TABLE " + TABLE + " TO ROLE " + ROLE +
-        " WITH GRANT OPTION", "Sentry does not allow WITH GRANT OPTION");
-  }
 
   /**
    * GRANT ... ON TABLE ... TO GROUP ...

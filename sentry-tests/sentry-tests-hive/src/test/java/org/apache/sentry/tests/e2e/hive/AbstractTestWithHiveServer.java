@@ -44,11 +44,15 @@ public abstract class AbstractTestWithHiveServer {
   protected static final String ADMIN1 = StaticUserGroup.ADMIN1,
       ADMINGROUP = StaticUserGroup.ADMINGROUP,
       USER1_1 = StaticUserGroup.USER1_1,
+      USER1_G = StaticUserGroup.USER1_G,
       USER2_1 = StaticUserGroup.USER2_1,
       USER3_1 = StaticUserGroup.USER3_1,
+      USER4_1 = StaticUserGroup.USER4_1,
       USERGROUP1 = StaticUserGroup.USERGROUP1,
+      USERGROUP1_GRANT = StaticUserGroup.USERGROUP1_GRANT,
       USERGROUP2 = StaticUserGroup.USERGROUP2,
-      USERGROUP3 = StaticUserGroup.USERGROUP3;
+      USERGROUP3 = StaticUserGroup.USERGROUP3,
+      USERGROUP4 = StaticUserGroup.USERGROUP4;
 
   public Context createContext(Map<String, String> properties)
       throws Exception {
