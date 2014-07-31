@@ -523,6 +523,7 @@ public class SentryStore {
 				+ "&& this.URI == \"" + toNULLCol(tPriv.getURI()) + "\" "
 				+ "&& this.grantOption == grantOption "
 				+ "&& this.action == \"" + toNULLCol(tPriv.getAction().toLowerCase()) + "\"");
+    query.declareParameters("Boolean grantOption");
     query.setUnique(true);
     Boolean grantOption = null;
     if (tPriv.getGrantOption().equals(TSentryGrantOption.TRUE)) {
