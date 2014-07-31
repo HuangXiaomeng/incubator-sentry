@@ -381,7 +381,7 @@ public class SentryStore {
         mPrivilege = (MSentryPrivilege) pm.detachCopy(mPrivilege);
       }
 
-      Set<MSentryPrivilege> privilegeGraph = Sets.newHashSet();
+      Set<MSentryPrivilege> privilegeGraph = Sets.newHashSet(mPrivilege);
       // Get the privilege graph
       populateChildren(Sets.newHashSet(roleName), mPrivilege, privilegeGraph);
       for (MSentryPrivilege childPriv : privilegeGraph) {
