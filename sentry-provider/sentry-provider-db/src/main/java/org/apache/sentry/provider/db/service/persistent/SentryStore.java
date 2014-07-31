@@ -381,7 +381,7 @@ public class SentryStore {
         mPrivilege = (MSentryPrivilege) pm.detachCopy(mPrivilege);
       }
 
-      Set<MSentryPrivilege> privilegeGraph = Sets.newHashSet(mPrivilege);
+      Set<MSentryPrivilege> privilegeGraph = Sets.newHashSet();
       // Get the privilege graph
       populateChildren(Sets.newHashSet(roleName), mPrivilege, privilegeGraph);
       for (MSentryPrivilege childPriv : privilegeGraph) {
@@ -484,10 +484,11 @@ public class SentryStore {
       filters.append(" && serverName == \"" + parent.getServerName() + "\"");
       if (!isNULL(parent.getDbName())) {
         filters.append(" && dbName == \"" + parent.getDbName() + "\"");
-        filters.append(" && tableName != \"__NULL__\"");
-      } else {
-        filters.append(" && (dbName != \"__NULL__\" || URI != \"__NULL__\")");
       }
+      if (!isNULL(parent.getTableName())) {
+        filters.append(" && tableName == \"" + parent.getTableName() + "\"");
+      }
+
       query.setFilter(filters.toString());
       query
           .setResult("privilegeScope, serverName, dbName, tableName, URI, action, grantorPrincipal, grantOption");
