@@ -95,4 +95,9 @@ public interface SentryOnFailureHookContext  {
    */
   public Configuration getConf();
 
+  /**
+   * @return the grantOption
+   */
+  public Boolean getGrantOption();
+
 }
