@@ -363,7 +363,7 @@ public class TestSentryStore {
     assertTrue(isGrantOptionException);
 
     // 6. user2 has role2, no grant option,
-    // grant select to role4, will throw no grant exception
+    // grant insert to role4, will throw no grant exception
     roleName = roles[4];
     grantor = users[2];
     TSentryPrivilege privilege5 = new TSentryPrivilege();
