@@ -32,6 +32,10 @@ namespace cpp Apache.Sentry.Provider.Db.Service.Thrift
 enum TSentryGrantOption {
   TRUE = 1,
   FALSE = 0,
+  # UNSET is used for revoke privilege, the component like 'hive'
+  # didn't support getting grant option, so use UNSET is stand
+  # for revoke both privileges with grant option and without grant
+  # option.
   UNSET = -1
 }
 
