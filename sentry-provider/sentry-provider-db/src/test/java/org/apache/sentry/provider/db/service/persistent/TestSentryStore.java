@@ -244,7 +244,7 @@ public class TestSentryStore {
 
   @Test
   public void testGrantRevokePrivilegeWithGrantOption() throws Exception {
-    String roleName = "test-grantOption-privilege";
+    String roleName = "test-grantOption-table";
     String grantor = "g1";
     String server = "server1";
     String db = "db1";
@@ -271,6 +271,34 @@ public class TestSentryStore {
     role = sentryStore.getMSentryRoleByName(roleName);
     privileges = role.getPrivileges();
     assertEquals(0, privileges.size());
+
+    roleName = "test-grantOption-db";
+    sentryStore.createSentryRole(roleName, grantor);
+    privilege = new TSentryPrivilege();
+    privilege.setPrivilegeScope("DATABASE");
+    privilege.setServerName(server);
+    privilege.setDbName(db);
+    privilege.setAction(AccessConstants.ALL);
+    privilege.setGrantorPrincipal(grantor);
+    privilege.setGrantOption(TSentryGrantOption.TRUE);
+    privilege.setCreateTime(System.currentTimeMillis());
+    privilege.setGrantOption(grantOption);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege);
+    role = sentryStore.getMSentryRoleByName(roleName);
+    privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 1, privileges.size());
+
+    privilege.setAction(AccessConstants.SELECT);
+    privilege.setGrantOption(TSentryGrantOption.UNSET);
+    sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege);
+    // after having ALL and revoking SELECT, we should have INSERT
+    role = sentryStore.getMSentryRoleByName(roleName);
+    privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 1, privileges.size());
+    MSentryPrivilege mPrivilege = Iterables.get(privileges, 0);
+    assertEquals(server, mPrivilege.getServerName());
+    assertEquals(db, mPrivilege.getDbName());
+    assertEquals(AccessConstants.INSERT, mPrivilege.getAction());
   }
 
   @Test

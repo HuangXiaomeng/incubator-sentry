@@ -72,6 +72,20 @@ public class MSentryPrivilege {
         URI, action, false);
   }
 
+  public MSentryPrivilege(MSentryPrivilege other) {
+    this.privilegeScope = other.privilegeScope;
+    this.serverName = other.serverName;
+    this.dbName = SentryStore.toNULLCol(other.dbName);
+    this.tableName = SentryStore.toNULLCol(other.tableName);
+    this.URI = SentryStore.toNULLCol(other.URI);
+    this.action = SentryStore.toNULLCol(other.action);
+    this.grantOption = other.grantOption;
+    this.roles = new HashSet<MSentryRole>();
+    for (MSentryRole role : other.roles) {
+      roles.add(role);
+    }
+  }
+
   public String getServerName() {
     return serverName;
   }

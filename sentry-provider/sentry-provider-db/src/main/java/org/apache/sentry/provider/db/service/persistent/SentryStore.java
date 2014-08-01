@@ -381,7 +381,17 @@ public class SentryStore {
         mPrivilege = (MSentryPrivilege) pm.detachCopy(mPrivilege);
       }
 
-      Set<MSentryPrivilege> privilegeGraph = Sets.newHashSet(mPrivilege);
+      Set<MSentryPrivilege> privilegeGraph = Sets.newHashSet();
+      if (mPrivilege.getGrantOption() != null) {
+        privilegeGraph.add(mPrivilege);
+      } else {
+        MSentryPrivilege mTure = new MSentryPrivilege(mPrivilege);
+        mTure.setGrantOption(true);
+        privilegeGraph.add(mTure);
+        MSentryPrivilege mFalse = new MSentryPrivilege(mPrivilege);
+        mFalse.setGrantOption(false);
+        privilegeGraph.add(mFalse);
+      }
       // Get the privilege graph
       populateChildren(Sets.newHashSet(roleName), mPrivilege, privilegeGraph);
       for (MSentryPrivilege childPriv : privilegeGraph) {
@@ -462,12 +472,8 @@ public class SentryStore {
 
   private Set<MSentryPrivilege> getChildPrivileges(Set<String> roleNames,
       MSentryPrivilege parent) throws SentryInvalidInputException {
-    // Table and URI do not have children,
-    // and grantOption is not null
-    if (((!isNULL(parent.getTableName())) || (!isNULL(parent.getURI())))
-        && parent.getGrantOption() != null) {
-      return new HashSet<MSentryPrivilege>();
-    }
+    // Table and URI do not have children
+    if ((!isNULL(parent.getTableName()))||(!isNULL(parent.getURI()))) return new HashSet<MSentryPrivilege>();
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     try {
@@ -484,9 +490,9 @@ public class SentryStore {
       filters.append(" && serverName == \"" + parent.getServerName() + "\"");
       if (!isNULL(parent.getDbName())) {
         filters.append(" && dbName == \"" + parent.getDbName() + "\"");
-      }
-      if (!isNULL(parent.getTableName())) {
-        filters.append(" && tableName == \"" + parent.getTableName() + "\"");
+        filters.append(" && tableName != \"__NULL__\"");
+      } else {
+        filters.append(" && (dbName != \"__NULL__\" || URI != \"__NULL__\")");
       }
 
       query.setFilter(filters.toString());
