@@ -31,9 +31,7 @@ import junit.framework.Assert;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.sentry.binding.hive.conf.HiveAuthzConf;
 import org.apache.sentry.provider.db.SentryAccessDeniedException;
-import org.apache.sentry.provider.file.PolicyFile;
 import org.apache.sentry.tests.e2e.hive.DummySentryOnFailureHook;
-import org.apache.sentry.tests.e2e.hive.StaticUserGroup;
 import org.apache.sentry.tests.e2e.hive.hiveserver.HiveServerFactory;
 import org.junit.Assume;
 import org.junit.Before;
@@ -63,7 +61,11 @@ public class TestPrivilegeWithGrantOption extends AbstractTestWithDbProvider {
   }
 
   /*
-   * Admin creates database DB_2 user1 tries to drop DB_2, but it has
+   * Admin grant DB_1 user1 without grant option, grant user3 with grant option,
+   * user1 tries to grant it to user2, but failed.
+   * user3 can grant it to user2.
+   * user1 tries to revoke, but failed.
+   * user3 tries to revoke user2, user3 and user1, user3 revoke user1 will failed.
    * permissions for DB_1.
    */
   @Test
@@ -82,43 +84,38 @@ public class TestPrivilegeWithGrantOption extends AbstractTestWithDbProvider {
     statement.execute("CREATE ROLE group1_role");
     statement.execute("GRANT ALL ON DATABASE db_1 TO ROLE group1_role");
     statement.execute("GRANT ROLE group1_role TO GROUP " + USERGROUP1);
-    statement.execute("CREATE ROLE group1_grant_role");
-    statement.execute("GRANT ALL ON DATABASE db_1 TO ROLE group1_grant_role WITH GRANT OPTION");
-    Thread.sleep(1000);
-    statement.execute("GRANT ROLE group1_grant_role TO GROUP " + USERGROUP1_GRANT);
+    statement.execute("CREATE ROLE group3_grant_role");
+    statement.execute("GRANT ALL ON DATABASE db_1 TO ROLE group3_grant_role WITH GRANT OPTION");
+    statement.execute("GRANT ROLE group3_grant_role TO GROUP " + USERGROUP3);
     statement.execute("CREATE ROLE group2_role");
     statement.execute("GRANT ROLE group2_role TO GROUP " + USERGROUP2);
-    
+
     connection.close();
 
     connection = context.createConnection(USER1_1);
     statement = context.createStatement(connection);
 
-   
     statement.execute("USE db_1");
     statement.execute("CREATE TABLE foo (id int)");
     verifyFailureHook(statement,"GRANT ALL ON DATABASE db_1 TO ROLE group2_role",null,null,null,true);
     connection.close();
-    /*statement.execute("REVOKE ALL ON Database db_1 FROM ROLE admin_role");*/
 
-    connection = context.createConnection(USER1_G);
+    connection = context.createConnection(USER3_1);
     statement = context.createStatement(connection);
     statement.execute("GRANT ALL ON DATABASE db_1 TO ROLE group2_role");
-    /* TBT verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE admin_role",null,null,null,true);*/
     connection.close();
-    
+
     connection = context.createConnection(USER1_1);
     statement = context.createStatement(connection);
     verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE admin_role",null,null,null,true);
     verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE group2_role",null,null,null,true);
-    verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE group1_grant_role",null,null,null,true);
+    verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE group3_grant_role",null,null,null,true);
     connection.close();
-    
-    connection = context.createConnection(USER1_G);
+
+    connection = context.createConnection(USER3_1);
     statement = context.createStatement(connection);
-    /* TBT verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE admin_role",null,null,null,true);*/
     statement.execute("REVOKE ALL ON Database db_1 FROM ROLE group2_role");
-    statement.execute("REVOKE ALL ON Database db_1 FROM ROLE group1_grant_role");
+    statement.execute("REVOKE ALL ON Database db_1 FROM ROLE group3_grant_role");
     verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE group1_role",null,null,null,true);
 
     connection.close();
