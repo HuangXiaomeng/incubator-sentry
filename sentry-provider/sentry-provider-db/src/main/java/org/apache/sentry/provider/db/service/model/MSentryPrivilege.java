@@ -229,18 +229,20 @@ public boolean equals(Object obj) {
    * @param other, other privilege
    */
   public boolean implies(MSentryPrivilege other) {
+    // serverName never be null
+    if (isNULL(serverName) || isNULL(other.serverName)) {
+      return false;
+    } else if (!serverName.equals(other.serverName)) {
+      return false;
+    }
+
+    // check URI implies
     if (!isNULL(URI) && !isNULL(other.URI)) {
       if (!PathUtils.impliesURI(URI, other.URI)) {
         return false;
       }
+      // if URI is NULL, check dbName and tableName
     } else if (isNULL(URI) && isNULL(other.URI)) {
-      if (!isNULL(serverName)) {
-        if (isNULL(other.serverName)) {
-          return false;
-        } else if (!serverName.equals(other.serverName)) {
-          return false;
-        }
-      }
       if (!isNULL(dbName)) {
         if (isNULL(other.dbName)) {
           return false;
@@ -255,10 +257,12 @@ public boolean equals(Object obj) {
           return false;
         }
       }
+      // if URI is not equals, return false
     } else {
       return false;
     }
 
+    // check action implies
     if (!action.equalsIgnoreCase("*") &&
         !action.equalsIgnoreCase(other.action)) {
       return false;
