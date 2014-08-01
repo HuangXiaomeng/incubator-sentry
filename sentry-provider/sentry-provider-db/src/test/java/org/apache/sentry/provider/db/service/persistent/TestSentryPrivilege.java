@@ -50,11 +50,13 @@ public class TestSentryPrivilege {
     my.setDbName("");
     assertTrue(my.implies(your));
 
-    // 2.test URI+action
+    // 2.test server+URI+action
     my = new MSentryPrivilege();
     your = new MSentryPrivilege();
-    my.setAction(AccessConstants.SELECT);
-    your.setAction(AccessConstants.SELECT);
+    my.setServerName("server1");
+    my.setAction(AccessConstants.ALL);
+    your.setServerName("server1");
+    your.setAction(AccessConstants.ALL);
     my.setURI("hdfs://namenode:9000/path");
     your.setURI("hdfs://namenode:9000/path");
     assertTrue(my.implies(your));
@@ -107,12 +109,13 @@ public class TestSentryPrivilege {
     your.setServerName("server2");
     assertFalse(my.implies(your));
 
-
-    // 2.test URI+action
+    // 2.test server+URI+action
     my = new MSentryPrivilege();
     your = new MSentryPrivilege();
-    my.setAction(AccessConstants.SELECT);
-    your.setAction(AccessConstants.SELECT);
+    my.setServerName("server1");
+    my.setAction(AccessConstants.ALL);
+    your.setServerName("server2");
+    your.setAction(AccessConstants.ALL);
 
     // relative path
     my.setURI("hdfs://namenode:9000/path");
@@ -154,6 +157,12 @@ public class TestSentryPrivilege {
     assertFalse(my.implies(your));
     my.setURI("file:///path1");
     your.setURI("file:///path2");
+    assertFalse(my.implies(your));
+
+    // bad server
+    your.setServerName("server2");
+    my.setURI("hdfs://namenode:9000/path1");
+    your.setURI("hdfs://namenode:9000/path1");
     assertFalse(my.implies(your));
   }
 }
