@@ -913,6 +913,21 @@ public class SentryStore {
     }
   }
 
+  private Set<MSentryRole> getRolesForGroups(PersistenceManager pm, Set<String> groups) {
+    Set<MSentryRole> result = new HashSet<MSentryRole>();
+    Query query = pm.newQuery(MSentryGroup.class);
+    query.setFilter("this.groupName == t");
+    query.declareParameters("java.lang.String t");
+    query.setUnique(true);
+    for (String group : groups) {
+      MSentryGroup sentryGroup = (MSentryGroup) query.execute(group.trim());
+      if (sentryGroup != null) {
+        result = sentryGroup.getRoles();
+      }
+    }
+    return result;
+  }
+
   public Set<String> listAllSentryPrivilegesForProvider(Set<String> groups, TSentryActiveRoleSet roleSet) throws SentryInvalidInputException {
     return listSentryPrivilegesForProvider(groups, roleSet, null);
   }
@@ -1351,27 +1366,19 @@ public class SentryStore {
     }
 
     if (!isAdminGroup) {
-      Set<String> roles = getRoleNamesForGroups(groups);
-      if (roles == null || roles.isEmpty()) {
-        throw new SentryNoGrantOpitonException(grantorPrincipal
-            + " has no grant!");
-      }
-
       boolean hasGrant = false;
-      for (String role: roles) {
-        MSentryRole grantorRole = getMSentryRole(pm, role);
-        if (grantorRole == null) {
-          continue;
-        }
-
-        Set<MSentryPrivilege> privilegeSet = grantorRole.getPrivileges();
-        if (privilegeSet != null && !privilegeSet.isEmpty()) {
-          // if grantorRole has a privilege p with grant option
-          // and mPrivilege is a child privilege of p
-          for (MSentryPrivilege p : privilegeSet) {
-            if (p.getGrantOption() && p.implies(mPrivilege)) {
-              hasGrant = true;
-              break;
+      Set<MSentryRole> roles = getRolesForGroups(pm, groups);
+      if (roles != null && !roles.isEmpty()) {
+        for (MSentryRole role: roles) {
+          Set<MSentryPrivilege> privilegeSet = role.getPrivileges();
+          if (privilegeSet != null && !privilegeSet.isEmpty()) {
+            // if role has a privilege p with grant option
+            // and mPrivilege is a child privilege of p
+            for (MSentryPrivilege p : privilegeSet) {
+              if (p.getGrantOption() && p.implies(mPrivilege)) {
+                hasGrant = true;
+                break;
+              }
             }
           }
         }
