@@ -147,6 +147,27 @@ public class TestSentryHiveAuthorizationTaskFactory {
         .getTable());
     Assert.assertEquals(TABLE, grantDesc.getPrivilegeSubjectDesc().getObject());
   }
+  /**
+   * GRANT ... ON TABLE ... TO ROLE ... WITH GRANT OPTION
+   */
+  @Test
+  public void testGrantRoleTableWithGrantOption() throws Exception {
+    DDLWork work = analyze(parse("GRANT " + ALL + " ON TABLE " + TABLE + " TO ROLE " + ROLE +
+        " WITH GRANT OPTION"));
+    GrantDesc grantDesc = work.getGrantDesc();
+    Assert.assertNotNull("Grant should not be null", grantDesc);
+    for (PrincipalDesc principal : assertSize(1, grantDesc.getPrincipals())) {
+      Assert.assertEquals(PrincipalType.ROLE, principal.getType());
+      Assert.assertEquals(ROLE, principal.getName());
+    }
+    for (PrivilegeDesc privilege : assertSize(1, grantDesc.getPrivileges())) {
+      Assert.assertEquals(Privilege.ALL, privilege.getPrivilege());
+    }
+    Assert.assertTrue("Expected table", grantDesc.getPrivilegeSubjectDesc()
+        .getTable());
+    Assert.assertTrue("Expected grantOption is true", grantDesc.isGrantOption());
+    Assert.assertEquals(TABLE, grantDesc.getPrivilegeSubjectDesc().getObject());
+  }
 
   /**
    * GRANT ... ON TABLE ... TO GROUP ...
