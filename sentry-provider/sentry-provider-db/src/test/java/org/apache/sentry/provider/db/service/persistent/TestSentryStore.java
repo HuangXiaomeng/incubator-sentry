@@ -33,7 +33,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.provider.db.SentryAlreadyExistsException;
-import org.apache.sentry.provider.db.SentryNoGrantOpitonException;
+import org.apache.sentry.provider.db.SentryGrantDeniedException;
 import org.apache.sentry.provider.db.SentryNoSuchObjectException;
 import org.apache.sentry.provider.db.service.model.MSentryPrivilege;
 import org.apache.sentry.provider.db.service.model.MSentryRole;
@@ -384,7 +384,7 @@ public class TestSentryStore {
     boolean isGrantOptionException = false;
     try {
       sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege4);
-    } catch (SentryNoGrantOpitonException e) {
+    } catch (SentryGrantDeniedException e) {
       isGrantOptionException = true;
       System.err.println(e.getMessage());
     }
@@ -406,7 +406,7 @@ public class TestSentryStore {
     isGrantOptionException = false;
     try {
       sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege5);
-    } catch (SentryNoGrantOpitonException e) {
+    } catch (SentryGrantDeniedException e) {
       isGrantOptionException = true;
       System.err.println(e.getMessage());
     }
@@ -488,7 +488,7 @@ public class TestSentryStore {
     boolean isGrantOptionException = false;
     try {
       sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege3);
-    } catch (SentryNoGrantOpitonException e) {
+    } catch (SentryGrantDeniedException e) {
       isGrantOptionException = true;
       System.err.println(e.getMessage());
     }
@@ -501,7 +501,7 @@ public class TestSentryStore {
     privilege2.setGrantorPrincipal(grantor);
     try {
       sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege2);
-    } catch (SentryNoGrantOpitonException e) {
+    } catch (SentryGrantDeniedException e) {
       isGrantOptionException = true;
       System.err.println(e.getMessage());
     }

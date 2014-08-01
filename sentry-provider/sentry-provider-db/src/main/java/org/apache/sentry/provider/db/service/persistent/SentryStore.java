@@ -46,8 +46,8 @@ import org.apache.sentry.core.model.db.DBModelAuthorizable.AuthorizableType;
 import org.apache.sentry.provider.common.ProviderConstants;
 import org.apache.sentry.provider.db.SentryAccessDeniedException;
 import org.apache.sentry.provider.db.SentryAlreadyExistsException;
+import org.apache.sentry.provider.db.SentryGrantDeniedException;
 import org.apache.sentry.provider.db.SentryInvalidInputException;
-import org.apache.sentry.provider.db.SentryNoGrantOpitonException;
 import org.apache.sentry.provider.db.SentryNoSuchObjectException;
 import org.apache.sentry.provider.db.service.model.MSentryGroup;
 import org.apache.sentry.provider.db.service.model.MSentryPrivilege;
@@ -1355,7 +1355,7 @@ public class SentryStore {
     }
     Set<String> groups = SentryPolicyStoreProcessor.getGroupsFromUserName(conf, grantorPrincipal);
     if (groups == null || groups.isEmpty()) {
-      throw new SentryNoGrantOpitonException(grantorPrincipal
+      throw new SentryGrantDeniedException(grantorPrincipal
           + " has no grant!");
     }
 
@@ -1391,7 +1391,7 @@ public class SentryStore {
       }
 
       if (!hasGrant) {
-        throw new SentryNoGrantOpitonException(grantorPrincipal
+        throw new SentryGrantDeniedException(grantorPrincipal
             + " has no grant!");
       }
     }
