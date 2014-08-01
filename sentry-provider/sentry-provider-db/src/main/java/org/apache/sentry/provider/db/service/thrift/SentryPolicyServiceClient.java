@@ -487,7 +487,7 @@ public class SentryPolicyServiceClient {
     } else if (grantOption.equals(false)) {
       return TSentryGrantOption.FALSE;
     }
-    return TSentryGrantOption.UNSET;
+    return TSentryGrantOption.FALSE;
   }
 
   public Set<String> listPrivilegesForProvider(Set<String> groups, ActiveRoleSet roleSet, Authorizable... authorizable)
