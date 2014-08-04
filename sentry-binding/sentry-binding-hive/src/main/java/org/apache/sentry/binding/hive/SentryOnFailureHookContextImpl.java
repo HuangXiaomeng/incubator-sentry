@@ -43,22 +43,12 @@ public class SentryOnFailureHookContextImpl implements SentryOnFailureHookContex
   private final AccessURI partitionURI;
   private final AuthorizationException authException;
   private final Configuration conf;
-  private final Boolean grantOption;
 
   public SentryOnFailureHookContextImpl(String command,
       Set<ReadEntity> inputs, Set<WriteEntity> outputs, HiveOperation hiveOp,
       Database db, Table tab, AccessURI udfURI, AccessURI partitionURI,
       String userName, String ipAddress, AuthorizationException e,
       Configuration conf) {
-    this(command, inputs, outputs, hiveOp, db, tab, udfURI,
-        partitionURI, userName, ipAddress, e, conf, null);
-  }
-
-  public SentryOnFailureHookContextImpl(String command,
-      Set<ReadEntity> inputs, Set<WriteEntity> outputs, HiveOperation hiveOp,
-      Database db, Table tab, AccessURI udfURI, AccessURI partitionURI,
-      String userName, String ipAddress, AuthorizationException e,
-      Configuration conf, Boolean grantOption) {
     this.command = command;
     this.inputs = inputs;
     this.outputs = outputs;
@@ -71,7 +61,6 @@ public class SentryOnFailureHookContextImpl implements SentryOnFailureHookContex
     this.partitionURI = partitionURI;
     this.authException = e;
     this.conf = conf;
-    this.grantOption = grantOption;
   }
 
   @Override
@@ -132,10 +121,5 @@ public class SentryOnFailureHookContextImpl implements SentryOnFailureHookContex
   @Override
   public Configuration getConf() {
     return conf;
-  }
-
-  @Override
-  public Boolean getGrantOption() {
-    return grantOption;
   }
 }

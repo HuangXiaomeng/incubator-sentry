@@ -135,14 +135,12 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
       Preconditions.checkNotNull(subject, "Subject cannot be null");
       server = Preconditions.checkNotNull(authzConf.get(AuthzConfVars.AUTHZ_SERVER_NAME.getVar()),
           "Config " + AuthzConfVars.AUTHZ_SERVER_NAME.getVar() + " is required");
-      Boolean grantOption = null;
       try {
         if (work.getRoleDDLDesc() != null) {
           return processRoleDDL(conf, console, sentryClient, subject.getName(),
               hiveAuthzBinding, work.getRoleDDLDesc());
         }
         if (work.getGrantDesc() != null) {
-          grantOption = work.getGrantDesc().isGrantOption();
           return processGrantDDL(conf, console, sentryClient,
               subject.getName(), server, work.getGrantDesc());
         }
@@ -155,7 +153,6 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
               work.getShowGrantDesc());
         }
         if (work.getGrantRevokeRoleDDL() != null) {
-          grantOption = work.getGrantRevokeRoleDDL().isGrantOption();
           return processGrantRevokeRoleDDL(conf, console, sentryClient,
               subject.getName(), work.getGrantRevokeRoleDDL());
         }
@@ -169,7 +166,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
             queryPlan.getQueryString(), new HashSet<ReadEntity>(),
             new HashSet<WriteEntity>(), stmtOperation,
             null, null, null, null, subject.getName(), ipAddress,
-            new AuthorizationException(e), conf, grantOption);
+            new AuthorizationException(e), conf);
         HiveAuthzBindingHook.runFailureHook(hookContext, csHooks);
         throw e; // rethrow the exception for logging
       }
