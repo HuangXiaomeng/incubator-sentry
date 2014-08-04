@@ -97,8 +97,8 @@ public class TestPrivilegeWithGrantOption extends AbstractTestWithDbProvider {
 
     statement.execute("USE db_1");
     statement.execute("CREATE TABLE foo (id int)");
-    verifyFailureHook(statement,"GRANT ALL ON DATABASE db_1 TO ROLE group2_role",null,null,null,false,true);
-    verifyFailureHook(statement,"GRANT ALL ON DATABASE db_1 TO ROLE group2_role WITH GRANT OPTION",null,null,null,true,true);
+    verifyFailureHook(statement,"GRANT ALL ON DATABASE db_1 TO ROLE group2_role",HiveOperation.GRANT_PRIVILEGE,null,null,true);
+    verifyFailureHook(statement,"GRANT ALL ON DATABASE db_1 TO ROLE group2_role WITH GRANT OPTION",HiveOperation.GRANT_PRIVILEGE,null,null,true);
     connection.close();
 
     connection = context.createConnection(USER3_1);
@@ -108,16 +108,16 @@ public class TestPrivilegeWithGrantOption extends AbstractTestWithDbProvider {
 
     connection = context.createConnection(USER1_1);
     statement = context.createStatement(connection);
-    verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE admin_role",null,null,null,null,true);
-    verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE group2_role",null,null,null,null,true);
-    verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE group3_grant_role",null,null,null,null,true);
+    verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE admin_role",HiveOperation.REVOKE_PRIVILEGE,null,null,true);
+    verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE group2_role",HiveOperation.REVOKE_PRIVILEGE,null,null,true);
+    verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE group3_grant_role",HiveOperation.REVOKE_PRIVILEGE,null,null,true);
     connection.close();
 
     connection = context.createConnection(USER3_1);
     statement = context.createStatement(connection);
     statement.execute("REVOKE ALL ON Database db_1 FROM ROLE group2_role");
     statement.execute("REVOKE ALL ON Database db_1 FROM ROLE group3_grant_role");
-    verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE group1_role",null,null,null,null,true);
+    verifyFailureHook(statement,"REVOKE ALL ON Database db_1 FROM ROLE group1_role",HiveOperation.REVOKE_PRIVILEGE,null,null,true);
 
     connection.close();
     context.close();
@@ -125,7 +125,7 @@ public class TestPrivilegeWithGrantOption extends AbstractTestWithDbProvider {
 
   // run the given statement and verify that failure hook is invoked as expected
   private void verifyFailureHook(Statement statement, String sqlStr, HiveOperation expectedOp,
-       String dbName, String tableName, Boolean grantOption, boolean checkSentryAccessDeniedException) throws Exception {
+       String dbName, String tableName, boolean checkSentryAccessDeniedException) throws Exception {
     // negative test case: non admin user can't create role
     assertFalse(DummySentryOnFailureHook.invoked);
     try {
