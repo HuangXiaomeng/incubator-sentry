@@ -628,6 +628,84 @@ public class TestSentryStore {
   }
 
   @Test
+  public void testGrantCheckWithColumn() throws Exception {
+    // 1. set local group mapping
+    // user0->group0->role0
+    // user1->group1->role1
+    String grantor = "g1";
+    String[] users = {"user0","user1"};
+    String[] roles = {"role0","role1"};
+    String[] groups = {"group0","group1"};
+    for (int i = 0; i < users.length; i++) {
+      addGroupsToUser(users[i], groups[i]);
+      sentryStore.createSentryRole(roles[i], grantor);
+      Set<TSentryGroup> tGroups = Sets.newHashSet();
+      TSentryGroup tGroup = new TSentryGroup(groups[i]);
+      tGroups.add(tGroup);
+      sentryStore.alterSentryRoleAddGroups(grantor, roles[i], tGroups);
+    }
+    writePolicyFile();
+
+    // 2. g1 grant select on table tb1 to role0, with grant option
+    String server = "server1";
+    String db = "db1";
+    String table = "tbl1";
+    String roleName = roles[0];
+    grantor = "g1";
+    TSentryPrivilege privilege1 = new TSentryPrivilege();
+    privilege1.setPrivilegeScope("TABLE");
+    privilege1.setServerName(server);
+    privilege1.setDbName(db);
+    privilege1.setTableName(table);
+    privilege1.setAction(AccessConstants.SELECT);
+    privilege1.setGrantorPrincipal(grantor);
+    privilege1.setCreateTime(System.currentTimeMillis());
+    privilege1.setGrantOption(TSentryGrantOption.TRUE);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege1);
+    MSentryRole role = sentryStore.getMSentryRoleByName(roleName);
+    Set<MSentryPrivilege> privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 1, privileges.size());
+
+    // 3. user0 grant select on column tb1.c1 to role1, with grant option
+    roleName = roles[1];
+    grantor = users[0];
+    String column = "c1";
+    TSentryPrivilege privilege2 = new TSentryPrivilege();
+    privilege2.setPrivilegeScope("COLUMN");
+    privilege2.setServerName(server);
+    privilege2.setDbName(db);
+    privilege2.setTableName(table);
+    privilege2.setColumnName(column);
+    privilege2.setAction(AccessConstants.SELECT);
+    privilege2.setGrantorPrincipal(grantor);
+    privilege2.setCreateTime(System.currentTimeMillis());
+    privilege2.setGrantOption(TSentryGrantOption.TRUE);
+    sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege2);
+
+    // 4. user1 revoke table level privilege from user0, will throw grant denied exception
+    roleName = roles[0];
+    grantor = users[1];
+    privilege1.setGrantorPrincipal(grantor);
+    boolean isGrantOptionException = false;
+    try {
+      sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege1);
+    } catch (SentryGrantDeniedException e) {
+      isGrantOptionException = true;
+      System.err.println(e.getMessage());
+    }
+    assertTrue(isGrantOptionException);
+
+    // 5. user0 revoke column level privilege from user1
+    roleName = roles[1];
+    grantor = users[0];
+    privilege2.setGrantorPrincipal(grantor);
+    sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege2);
+    role = sentryStore.getMSentryRoleByName(roleName);
+    privileges = role.getPrivileges();
+    assertEquals(0, privileges.size());
+  }
+
+  @Test
   public void testListSentryPrivilegesForProvider() throws Exception {
     String roleName1 = "list-privs-r1", roleName2 = "list-privs-r2";
     String groupName1 = "list-privs-g1", groupName2 = "list-privs-g2";
