@@ -40,6 +40,7 @@ public class MSentryPrivilege {
   private String serverName = "";
   private String dbName = "";
   private String tableName = "";
+  private String columnName = "";
   private String URI = "";
   private String action = "";
   private Boolean grantOption = false;
@@ -53,12 +54,13 @@ public class MSentryPrivilege {
   }
 
   public MSentryPrivilege(String privilegeName, String privilegeScope,
-      String serverName, String dbName, String tableName, String URI,
-      String action, Boolean grantOption) {
+      String serverName, String dbName, String tableName, String columnName,
+      String URI, String action, Boolean grantOption) {
     this.privilegeScope = privilegeScope;
     this.serverName = serverName;
     this.dbName = SentryStore.toNULLCol(dbName);
     this.tableName = SentryStore.toNULLCol(tableName);
+    this.columnName = SentryStore.toNULLCol(columnName);
     this.URI = SentryStore.toNULLCol(URI);
     this.action = SentryStore.toNULLCol(action);
     this.grantOption = grantOption;
@@ -66,10 +68,10 @@ public class MSentryPrivilege {
   }
 
   public MSentryPrivilege(String privilegeName, String privilegeScope,
-      String serverName, String dbName, String tableName, String URI,
-      String action) {
+      String serverName, String dbName, String tableName, String columnName,
+      String URI, String action) {
     this(privilegeName, privilegeScope, serverName, dbName, tableName,
-        URI, action, false);
+        columnName, URI, action, false);
   }
 
   public MSentryPrivilege(MSentryPrivilege other) {
@@ -77,6 +79,7 @@ public class MSentryPrivilege {
     this.serverName = other.serverName;
     this.dbName = SentryStore.toNULLCol(other.dbName);
     this.tableName = SentryStore.toNULLCol(other.tableName);
+    this.columnName = SentryStore.toNULLCol(other.columnName);
     this.URI = SentryStore.toNULLCol(other.URI);
     this.action = SentryStore.toNULLCol(other.action);
     this.grantOption = other.grantOption;
@@ -108,6 +111,14 @@ public class MSentryPrivilege {
 
   public void setTableName(String tableName) {
     this.tableName = (tableName == null) ? "" : tableName;
+  }
+
+  public String getColumnName() {
+    return columnName;
+  }
+
+  public void setColumnName(String columnName) {
+    this.columnName = (columnName == null) ? "" : columnName;
   }
 
   public String getURI() {
@@ -175,10 +186,10 @@ public class MSentryPrivilege {
   public String toString() {
     return "MSentryPrivilege [privilegeScope=" + privilegeScope
         + ", serverName=" + serverName + ", dbName=" + dbName
-        + ", tableName=" + tableName + ", URI=" + URI
-        + ", action=" + action + ", roles=[...]" + ", createTime="
-        + createTime + ", grantorPrincipal=" + grantorPrincipal
-        + ", grantOption=" + grantOption +"]";
+        + ", tableName=" + tableName + ", columnName=" + columnName
+        + ", URI=" + URI + ", action=" + action + ", roles=[...]"
+        + ", createTime=" + createTime + ", grantorPrincipal="
+        + grantorPrincipal + ", grantOption=" + grantOption +"]";
   }
 
 @Override
@@ -191,6 +202,7 @@ public int hashCode() {
   result = prime * result
 		+ ((serverName == null) ? 0 : serverName.hashCode());
   result = prime * result + ((tableName == null) ? 0 : tableName.hashCode());
+  result = prime * result + ((columnName == null) ? 0 : columnName.hashCode());
   result = prime * result + ((grantOption == null) ? 0 : grantOption.hashCode());
   return result;
 }
@@ -229,6 +241,11 @@ public boolean equals(Object obj) {
 			return false;
 	} else if (!tableName.equals(other.tableName))
 		return false;
+	if (columnName == null) {
+    if (other.columnName != null)
+      return false;
+  } else if (!columnName.equals(other.columnName))
+    return false;
 	if (grantOption == null) {
 	  if (other.grantOption != null)
 	    return false;
@@ -268,6 +285,13 @@ public boolean equals(Object obj) {
         if (isNULL(other.tableName)) {
           return false;
         } else if (!tableName.equals(other.tableName)) {
+          return false;
+        }
+      }
+      if (!isNULL(columnName)) {
+        if (isNULL(other.columnName)) {
+          return false;
+        } else if (!columnName.equals(other.columnName)) {
           return false;
         }
       }
