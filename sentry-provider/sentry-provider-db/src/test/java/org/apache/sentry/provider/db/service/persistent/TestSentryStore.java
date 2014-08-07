@@ -243,6 +243,64 @@ public class TestSentryStore {
   }
 
   @Test
+  public void testGrantRevokePrivilegeWithColumn() throws Exception {
+    String roleName = "test-privilege";
+    String grantor = "g1";
+    String server = "server1";
+    String db = "db1";
+    String table = "tbl1";
+    String column1 = "c1";
+    String column2 = "c2";
+    long seqId = sentryStore.createSentryRole(roleName, grantor).getSequenceId();
+    TSentryPrivilege privilege = new TSentryPrivilege();
+    privilege.setPrivilegeScope("COLUMN");
+    privilege.setServerName(server);
+    privilege.setDbName(db);
+    privilege.setTableName(table);
+    privilege.setColumnName(column1);
+    privilege.setAction(AccessConstants.ALL);
+    privilege.setGrantorPrincipal(grantor);
+    privilege.setCreateTime(System.currentTimeMillis());
+    assertEquals(seqId + 1, sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege)
+        .getSequenceId());
+    privilege.setColumnName(column2);
+    assertEquals(seqId + 2, sentryStore.alterSentryRoleGrantPrivilege(roleName, privilege)
+        .getSequenceId());
+    MSentryRole role = sentryStore.getMSentryRoleByName(roleName);
+    Set<MSentryPrivilege> privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 2, privileges.size());
+    privilege.setAction(AccessConstants.SELECT);
+    assertEquals(seqId + 3, sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege)
+        .getSequenceId());
+
+    // after having ALL and revoking SELECT, we should have INSERT
+    role = sentryStore.getMSentryRoleByName(roleName);
+    privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 2, privileges.size());
+    MSentryPrivilege mPrivilege = Iterables.get(privileges, 0);
+    assertEquals(server, mPrivilege.getServerName());
+    assertEquals(db, mPrivilege.getDbName());
+    assertEquals(table, mPrivilege.getTableName());
+    assertEquals(AccessConstants.INSERT, mPrivilege.getAction());
+    assertFalse(mPrivilege.getGrantOption());
+
+    // after revoking table level privilege, we will remove the two column level items
+    privilege = new TSentryPrivilege();
+    privilege.setPrivilegeScope("TABLE");
+    privilege.setServerName(server);
+    privilege.setDbName(db);
+    privilege.setTableName(table);
+    privilege.setAction(AccessConstants.INSERT);
+    privilege.setGrantorPrincipal(grantor);
+    privilege.setCreateTime(System.currentTimeMillis());
+    assertEquals(seqId + 4, sentryStore.alterSentryRoleRevokePrivilege(roleName, privilege)
+        .getSequenceId());
+    role = sentryStore.getMSentryRoleByName(roleName);
+    privileges = role.getPrivileges();
+    assertEquals(privileges.toString(), 0, privileges.size());
+  }
+
+  @Test
   public void testGrantRevokePrivilegeWithGrantOption() throws Exception {
     String roleName = "test-grantOption-table";
     String grantor = "g1";
