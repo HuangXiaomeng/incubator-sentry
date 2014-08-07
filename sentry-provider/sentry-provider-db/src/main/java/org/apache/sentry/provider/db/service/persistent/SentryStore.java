@@ -307,7 +307,8 @@ public class SentryStore {
       throw new SentryNoSuchObjectException("Role: " + roleName);
     } else {
 
-      if ((!isNULL(privilege.getTableName())) || (!isNULL(privilege.getDbName()))) {
+      if ((!isNULL(privilege.getColumnName())) || (!isNULL(privilege.getTableName()))
+          || (!isNULL(privilege.getDbName()))) {
         // If Grant is for ALL and Either INSERT/SELECT already exists..
         // need to remove it and GRANT ALL..
         if (privilege.getAction().equalsIgnoreCase("*")) {
@@ -471,12 +472,14 @@ public class SentryStore {
    */
   private void populateChildren(Set<String> roleNames, MSentryPrivilege priv,
       Set<MSentryPrivilege> children) throws SentryInvalidInputException {
-    if ((!isNULL(priv.getServerName())) || (!isNULL(priv.getDbName()))) {
-      // Get all DBLevel Privs
+    if ((!isNULL(priv.getServerName())) || (!isNULL(priv.getDbName()))
+        || (!isNULL(priv.getTableName()))) {
+      // Get all TableLevel Privs
       Set<MSentryPrivilege> childPrivs = getChildPrivileges(roleNames, priv);
       for (MSentryPrivilege childPriv : childPrivs) {
-        // Only recurse for db level privs..
-        if ((!isNULL(childPriv.getDbName())) && (!isNULL(childPriv.getTableName()))) {
+        // Only recurse for table level privs..
+        if ((!isNULL(childPriv.getDbName())) && (!isNULL(childPriv.getTableName()))
+            && (!isNULL(childPriv.getColumnName()))) {
           populateChildren(roleNames, childPriv, children);
         }
         children.add(childPriv);
@@ -486,8 +489,8 @@ public class SentryStore {
 
   private Set<MSentryPrivilege> getChildPrivileges(Set<String> roleNames,
       MSentryPrivilege parent) throws SentryInvalidInputException {
-    // Table and URI do not have children
-    if ((!isNULL(parent.getTableName()))||(!isNULL(parent.getURI()))) return new HashSet<MSentryPrivilege>();
+    // Column and URI do not have children
+    if ((!isNULL(parent.getColumnName()))||(!isNULL(parent.getURI()))) return new HashSet<MSentryPrivilege>();
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     try {
@@ -504,14 +507,19 @@ public class SentryStore {
       filters.append(" && serverName == \"" + parent.getServerName() + "\"");
       if (!isNULL(parent.getDbName())) {
         filters.append(" && dbName == \"" + parent.getDbName() + "\"");
-        filters.append(" && tableName != \"__NULL__\"");
+        if (!isNULL(parent.getTableName())) {
+          filters.append(" && tableName == \"" + parent.getTableName() + "\"");
+          filters.append(" && columnName != \"__NULL__\"");
+        } else {
+          filters.append(" && tableName != \"__NULL__\"");
+        }
       } else {
         filters.append(" && (dbName != \"__NULL__\" || URI != \"__NULL__\")");
       }
 
       query.setFilter(filters.toString());
-      query
-          .setResult("privilegeScope, serverName, dbName, tableName, URI, action, grantorPrincipal, grantOption");
+      query.setResult("privilegeScope, serverName, dbName, tableName, columnName," +
+          "URI, action, grantorPrincipal, grantOption");
       Set<MSentryPrivilege> privileges = new HashSet<MSentryPrivilege>();
       for (Object[] privObj : (List<Object[]>) query.execute()) {
         MSentryPrivilege priv = new MSentryPrivilege();
@@ -519,10 +527,11 @@ public class SentryStore {
         priv.setServerName((String) privObj[1]);
         priv.setDbName((String) privObj[2]);
         priv.setTableName((String) privObj[3]);
-        priv.setURI((String) privObj[4]);
-        priv.setAction((String) privObj[5]);
-        priv.setGrantorPrincipal((String) privObj[6]);
-        priv.setGrantOption((Boolean) privObj[7]);
+        priv.setColumnName((String) privObj[4]);
+        priv.setURI((String) privObj[5]);
+        priv.setAction((String) privObj[6]);
+        priv.setGrantorPrincipal((String) privObj[7]);
+        priv.setGrantOption((Boolean) privObj[8]);
         privileges.add(priv);
       }
       rollbackTransaction = false;
@@ -540,6 +549,7 @@ public class SentryStore {
     query.setFilter("this.serverName == \"" + toNULLCol(tPriv.getServerName()) + "\" "
 				+ "&& this.dbName == \"" + toNULLCol(tPriv.getDbName()) + "\" "
 				+ "&& this.tableName == \"" + toNULLCol(tPriv.getTableName()) + "\" "
+				+ "&& this.columnName == \"" + toNULLCol(tPriv.getColumnName()) + "\" "
 				+ "&& this.URI == \"" + toNULLCol(tPriv.getURI()) + "\" "
 				+ "&& this.grantOption == grantOption "
 				+ "&& this.action == \"" + toNULLCol(tPriv.getAction().toLowerCase()) + "\"");
@@ -995,6 +1005,10 @@ public class SentryStore {
         if (!isNULL(privilege.getTableName())) {
           authorizable.add(KV_JOINER.join(AuthorizableType.Table.name().toLowerCase(),
               privilege.getTableName()));
+          if (!isNULL(privilege.getColumnName())) {
+            authorizable.add(KV_JOINER.join(AuthorizableType.Column.name().toLowerCase(),
+                privilege.getColumnName()));
+          }
         }
       }
     } else {
@@ -1072,6 +1086,7 @@ public class SentryStore {
     privilege.setServerName(fromNULLCol(mSentryPrivilege.getServerName()));
     privilege.setDbName(fromNULLCol(mSentryPrivilege.getDbName()));
     privilege.setTableName(fromNULLCol(mSentryPrivilege.getTableName()));
+    privilege.setColumnName(fromNULLCol(mSentryPrivilege.getColumnName()));
     privilege.setURI(fromNULLCol(mSentryPrivilege.getURI()));
     privilege.setGrantorPrincipal(mSentryPrivilege.getGrantorPrincipal());
     if (mSentryPrivilege.getGrantOption() != null) {
@@ -1093,6 +1108,7 @@ public class SentryStore {
     mSentryPrivilege.setServerName(toNULLCol(safeTrimLower(privilege.getServerName())));
     mSentryPrivilege.setDbName(toNULLCol(safeTrimLower(privilege.getDbName())));
     mSentryPrivilege.setTableName(toNULLCol(safeTrimLower(privilege.getTableName())));
+    mSentryPrivilege.setColumnName(toNULLCol(safeTrimLower(privilege.getColumnName())));
     mSentryPrivilege.setPrivilegeScope(safeTrim(privilege.getPrivilegeScope()));
     mSentryPrivilege.setAction(toNULLCol(safeTrimLower(privilege.getAction())));
     mSentryPrivilege.setCreateTime(System.currentTimeMillis());
@@ -1328,7 +1344,9 @@ public class SentryStore {
     tSentryPrivilege.setURI(fromNULLCol(tAuthorizable.getUri()));
     tSentryPrivilege.setGrantorPrincipal(grantorPrincipal);
     PrivilegeScope scope;
-    if (!isNULL(tSentryPrivilege.getTableName())) {
+    if (!isNULL(tSentryPrivilege.getColumnName())) {
+      scope = PrivilegeScope.COLUMN;
+    } else if (!isNULL(tSentryPrivilege.getTableName())) {
       scope = PrivilegeScope.TABLE;
     } else if (!isNULL(tSentryPrivilege.getDbName())) {
       scope = PrivilegeScope.DATABASE;
