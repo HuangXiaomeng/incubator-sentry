@@ -495,6 +495,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
 
     String dbName = null;
     String tableName = null;
+    List<String> columnNames = null;
     String uriPath = null;
     String serverName = null;
     try {
@@ -521,7 +522,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
       for (PrivilegeDesc privDesc : privileges) {
         List<String> columns = privDesc.getColumns();
         if (columns != null && !columns.isEmpty()) {
-          throw new HiveException(SentryHiveConstants.COLUMN_PRIVS_NOT_SUPPORTED);
+          columnNames = columns;
         }
         if (!SentryHiveConstants.ALLOWED_PRIVS.contains(privDesc.getPrivilege().getPriv())) {
           String msg = SentryHiveConstants.PRIVILEGE_NOT_SUPPORTED + privDesc.getPrivilege().getPriv();
@@ -542,9 +543,12 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
             } else if (tableName == null) {
               sentryClient.grantDatabasePrivilege(subject, princ.getName(), server, dbName,
                   toDbSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
-            } else {
+            } else if (columnNames == null) {
               sentryClient.grantTablePrivilege(subject, princ.getName(), server, dbName,
                   tableName, toSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
+            } else {
+              sentryClient.grantColumnPrivilege(subject, princ.getName(), server, dbName,
+                  tableName, columnNames, toSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
             }
           } else {
             if (serverName != null) {
@@ -554,9 +558,12 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
             } else if (tableName == null) {
               sentryClient.revokeDatabasePrivilege(subject, princ.getName(), server, dbName,
                   toDbSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
-            } else {
+            } else if (columnNames == null) {
               sentryClient.revokeTablePrivilege(subject, princ.getName(), server, dbName,
                   tableName, toSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
+            } else {
+              sentryClient.revokeColumnPrivilege(subject, princ.getName(), server, dbName,
+                  tableName, columnNames, toSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
             }
           }
         }

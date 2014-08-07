@@ -331,6 +331,21 @@ public class SentryPolicyServiceClient {
         null, db, table, null, action, grantOption);
   }
 
+  public void grantColumnPrivilege(String requestorUserName,
+      String roleName, String server, String db, String table, List<String> columnNames, String action)
+  throws SentryUserException {
+    grantPrivilege(requestorUserName, roleName, PrivilegeScope.TABLE, server,
+        null,
+        db, table, columnNames, action);
+  }
+
+  public void grantColumnPrivilege(String requestorUserName,
+      String roleName, String server, String db, String table, List<String> columnNames, String action, Boolean grantOption)
+  throws SentryUserException {
+    grantPrivilege(requestorUserName, roleName, PrivilegeScope.TABLE, server,
+        null, db, table, columnNames, action, grantOption);
+  }
+
   private TSentryAuthorizable setupSentryAuthorizable(
       List<? extends Authorizable> authorizable) {
     TSentryAuthorizable tSentryAuthorizable = new TSentryAuthorizable();
@@ -355,14 +370,14 @@ public class SentryPolicyServiceClient {
 
   private void grantPrivilege(String requestorUserName, String roleName,
       PrivilegeScope scope, String serverName, String uri, String db,
-      String table, Set<String> columns, String action)  throws SentryUserException {
+      String table, List<String> columns, String action)  throws SentryUserException {
     grantPrivilege(requestorUserName, roleName, scope, serverName, uri,
     db, table, columns, action, false);
   }
 
   private void grantPrivilege(String requestorUserName,
       String roleName, PrivilegeScope scope, String serverName, String uri, String db, String table, 
-      Set<String> columns, String action, Boolean grantOption)
+      List<String> columns, String action, Boolean grantOption)
   throws SentryUserException {
     TAlterSentryRoleGrantPrivilegeRequest request = new TAlterSentryRoleGrantPrivilegeRequest();
     request.setProtocol_version(ThriftConstants.TSENTRY_SERVICE_VERSION_CURRENT);
@@ -437,15 +452,31 @@ public class SentryPolicyServiceClient {
         db, table, null, action, grantOption);
   }
 
+  public void revokeColumnePrivilege(String requestorUserName, String roleName,
+      String server, String db, String table, List<String> columns, String action)
+  throws SentryUserException {
+    revokePrivilege(requestorUserName, roleName,
+        PrivilegeScope.TABLE, server, null,
+        db, table, null, action);
+  }
+
+  public void revokeColumnPrivilege(String requestorUserName, String roleName,
+      String server, String db, String table, List<String> columns, String action, Boolean grantOption)
+  throws SentryUserException {
+    revokePrivilege(requestorUserName, roleName,
+        PrivilegeScope.TABLE, server, null,
+        db, table, null, action, grantOption);
+  }
+
   private void revokePrivilege(String requestorUserName,
       String roleName, PrivilegeScope scope, String serverName, String uri,
-      String db, String table, Set<String> columns, String action)
+      String db, String table, List<String> columns, String action)
   throws SentryUserException {
     this.revokePrivilege(requestorUserName, roleName, scope, serverName, uri, db, table, columns, action, false);
   }
 
   private void revokePrivilege(String requestorUserName, String roleName,
-      PrivilegeScope scope, String serverName, String uri, String db, String table, Set<String> columns,
+      PrivilegeScope scope, String serverName, String uri, String db, String table, List<String> columns,
       String action, Boolean grantOption)
   throws SentryUserException {
     TAlterSentryRoleRevokePrivilegeRequest request = new TAlterSentryRoleRevokePrivilegeRequest();
@@ -464,7 +495,7 @@ public class SentryPolicyServiceClient {
   }
 
   private Set<TSentryPrivilege> convertColumnPrivileges(String requestorUserName,
-      PrivilegeScope scope, String serverName, String uri, String db, String table, Set<String> columns,
+      PrivilegeScope scope, String serverName, String uri, String db, String table, List<String> columns,
       String action, Boolean grantOption) {
     ImmutableSet.Builder<TSentryPrivilege> setBuilder = ImmutableSet.builder();
     if (columns == null) {
