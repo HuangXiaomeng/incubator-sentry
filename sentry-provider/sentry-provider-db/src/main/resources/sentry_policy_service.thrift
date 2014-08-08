@@ -145,6 +145,7 @@ struct TSentryAuthorizable {
 2: optional string uri,
 3: optional string db,
 4: optional string table,
+5: optional string column,
 }
 
 # SHOW GRANT
