@@ -761,6 +761,11 @@ public class SentryStore {
               && !AccessConstants.ALL
                   .equalsIgnoreCase(authHierarchy.getTable())) {
             filters.append(" && ((tableName == \"" + authHierarchy.getTable().toLowerCase() + "\") || (tableName == \"__NULL__\")) && (URI == \"__NULL__\")");
+            if ((authHierarchy.getColumn() != null)
+                && !AccessConstants.ALL
+                    .equalsIgnoreCase(authHierarchy.getColumn())) {
+              filters.append(" && ((columnName == \"" + authHierarchy.getColumn().toLowerCase() + "\") || (columnNames == \"__NULL__\")) && (URI == \"__NULL__\")");
+            }
           }
         }
         if (authHierarchy.getUri() != null) {
@@ -815,6 +820,9 @@ public class SentryStore {
     }
     if ((authHierarchy.getTable() != null) && (authHierarchy.getDb() == null)) {
       throw new SentryInvalidInputException("dbName cannot be null when tableName is present !!");
+    }
+    if ((authHierarchy.getColumn() != null) && (authHierarchy.getTable() == null)) {
+      throw new SentryInvalidInputException("tableName cannot be null when columnName is present !!");
     }
     if ((authHierarchy.getUri() == null) && (authHierarchy.getDb() == null)) {
       throw new SentryInvalidInputException("One of uri or dbName must not be null !!");
@@ -1341,6 +1349,7 @@ public class SentryStore {
     tSentryPrivilege.setDbName(fromNULLCol(tAuthorizable.getDb()));
     tSentryPrivilege.setServerName(fromNULLCol(tAuthorizable.getServer()));
     tSentryPrivilege.setTableName(fromNULLCol(tAuthorizable.getTable()));
+    tSentryPrivilege.setColumnName(fromNULLCol(tAuthorizable.getColumn()));
     tSentryPrivilege.setURI(fromNULLCol(tAuthorizable.getUri()));
     tSentryPrivilege.setGrantorPrincipal(grantorPrincipal);
     PrivilegeScope scope;
