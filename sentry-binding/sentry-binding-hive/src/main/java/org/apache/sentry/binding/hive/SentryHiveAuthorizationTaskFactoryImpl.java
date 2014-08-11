@@ -137,12 +137,6 @@ public class SentryHiveAuthorizationTaskFactoryImpl implements HiveAuthorization
     if (privilegeObj.getPartSpec() != null) {
       throw new SemanticException(SentryHiveConstants.PARTITION_PRIVS_NOT_SUPPORTED);
     }
-    for (PrivilegeDesc privDesc : privilegeDesc) {
-      List<String> columns = privDesc.getColumns();
-      if (columns != null && !columns.isEmpty()) {
-        throw new SemanticException(SentryHiveConstants.COLUMN_PRIVS_NOT_SUPPORTED);
-      }
-    }
     for (PrincipalDesc princ : principalDesc) {
       if (princ.getType() != PrincipalType.ROLE) {
         String msg = SentryHiveConstants.GRANT_REVOKE_NOT_SUPPORTED_FOR_PRINCIPAL + princ.getType();
@@ -165,12 +159,6 @@ public class SentryHiveAuthorizationTaskFactoryImpl implements HiveAuthorization
     }
     if (privilegeObj.getPartSpec() != null) {
       throw new SemanticException(SentryHiveConstants.PARTITION_PRIVS_NOT_SUPPORTED);
-    }
-    for (PrivilegeDesc privDesc : privilegeDesc) {
-      List<String> columns = privDesc.getColumns();
-      if (columns != null && !columns.isEmpty()) {
-        throw new SemanticException(SentryHiveConstants.COLUMN_PRIVS_NOT_SUPPORTED);
-      }
     }
     for (PrincipalDesc princ : principalDesc) {
       if (princ.getType() != PrincipalType.ROLE) {
@@ -292,9 +280,7 @@ public class SentryHiveAuthorizationTaskFactoryImpl implements HiveAuthorization
         ASTNode astChild = (ASTNode) ast.getChild(i);
         if (astChild.getToken().getType() == HiveParser.TOK_PARTSPEC) {
           throw new SemanticException(SentryHiveConstants.PARTITION_PRIVS_NOT_SUPPORTED);
-        } else if (astChild.getToken().getType() == HiveParser.TOK_TABCOLNAME) {
-          throw new SemanticException(SentryHiveConstants.COLUMN_PRIVS_NOT_SUPPORTED);
-        }else if (astChild.getToken().getType() == HiveParser.TOK_URI) {
+        } else if (astChild.getToken().getType() == HiveParser.TOK_URI) {
           privilegeObject = privilegeObject.replaceAll("'", "").replaceAll("\"", "");
           subject.setUri(true);
         } else if (astChild.getToken().getType() == HiveParser.TOK_SERVER) {
@@ -344,9 +330,6 @@ public class SentryHiveAuthorizationTaskFactoryImpl implements HiveAuthorization
       if (!SentryHiveConstants.ALLOWED_PRIVS.contains(privObj.getPriv())) {
         String msg = SentryHiveConstants.PRIVILEGE_NOT_SUPPORTED + privObj.getPriv();
         throw new SemanticException(msg);
-      }
-      if (privilegeDef.getChildCount() > 1) {
-        throw new SemanticException(SentryHiveConstants.COLUMN_PRIVS_NOT_SUPPORTED);
       }
       PrivilegeDesc privilegeDesc = new PrivilegeDesc(privObj, null);
       ret.add(privilegeDesc);
