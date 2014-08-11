@@ -547,7 +547,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
               sentryClient.grantTablePrivilege(subject, princ.getName(), server, dbName,
                   tableName, toSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
             } else {
-              sentryClient.grantColumnPrivilege(subject, princ.getName(), server, dbName,
+              sentryClient.grantColumnsPrivilege(subject, princ.getName(), server, dbName,
                   tableName, columnNames, toSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
             }
           } else {
@@ -562,7 +562,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
               sentryClient.revokeTablePrivilege(subject, princ.getName(), server, dbName,
                   tableName, toSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
             } else {
-              sentryClient.revokeColumnPrivilege(subject, princ.getName(), server, dbName,
+              sentryClient.revokeColumnsPrivilege(subject, princ.getName(), server, dbName,
                   tableName, columnNames, toSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
             }
           }

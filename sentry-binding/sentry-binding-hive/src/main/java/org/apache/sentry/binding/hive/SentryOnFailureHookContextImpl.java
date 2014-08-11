@@ -26,6 +26,7 @@ import org.apache.hadoop.hive.ql.hooks.WriteEntity;
 import org.apache.hadoop.hive.ql.metadata.AuthorizationException;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.sentry.core.model.db.AccessURI;
+import org.apache.sentry.core.model.db.Column;
 import org.apache.sentry.core.model.db.Database;
 import org.apache.sentry.core.model.db.Table;
 
@@ -39,6 +40,7 @@ public class SentryOnFailureHookContextImpl implements SentryOnFailureHookContex
   private final String ipAddress;
   private final Database database;
   private final Table table;
+  private final Column column;
   private final AccessURI udfURI;
   private final AccessURI partitionURI;
   private final AuthorizationException authException;
@@ -57,6 +59,27 @@ public class SentryOnFailureHookContextImpl implements SentryOnFailureHookContex
     this.ipAddress = ipAddress;
     this.database = db;
     this.table = tab;
+    this.column = null;
+    this.udfURI = udfURI;
+    this.partitionURI = partitionURI;
+    this.authException = e;
+    this.conf = conf;
+  }
+
+  public SentryOnFailureHookContextImpl(String command,
+      Set<ReadEntity> inputs, Set<WriteEntity> outputs, HiveOperation hiveOp,
+      Database db, Table tab, Column col, AccessURI udfURI, AccessURI partitionURI,
+      String userName, String ipAddress, AuthorizationException e,
+      Configuration conf) {
+    this.command = command;
+    this.inputs = inputs;
+    this.outputs = outputs;
+    this.hiveOp = hiveOp;
+    this.userName = userName;
+    this.ipAddress = ipAddress;
+    this.database = db;
+    this.table = tab;
+    this.column = col;
     this.udfURI = udfURI;
     this.partitionURI = partitionURI;
     this.authException = e;
@@ -104,6 +127,11 @@ public class SentryOnFailureHookContextImpl implements SentryOnFailureHookContex
   }
 
   @Override
+  public Column getColumn() {
+    return column;
+  }
+
+  @Override
   public AccessURI getUdfURI() {
     return udfURI;
   }
@@ -122,4 +150,5 @@ public class SentryOnFailureHookContextImpl implements SentryOnFailureHookContex
   public Configuration getConf() {
     return conf;
   }
+
 }

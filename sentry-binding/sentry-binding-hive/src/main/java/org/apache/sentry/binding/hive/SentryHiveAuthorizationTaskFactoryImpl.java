@@ -201,18 +201,39 @@ public class SentryHiveAuthorizationTaskFactoryImpl implements HiveAuthorization
     String principalName = BaseSemanticAnalyzer.unescapeIdentifier(principal.getChild(0).getText());
     PrincipalDesc principalDesc = new PrincipalDesc(principalName, type);
 
-    //Column privileges and Partition privileges are not supported by Sentry
+    // Partition privileges are not supported by Sentry
+    List<String> cols = null;
     if (ast.getChildCount() > 1) {
       ASTNode child = (ASTNode) ast.getChild(1);
       if (child.getToken().getType() == HiveParser.TOK_PRIV_OBJECT_COL) {
-        privHiveObj = analyzePrivilegeObject(child);
+        privHiveObj = new SentryHivePrivilegeObjectDesc();
+        String privilegeObject = BaseSemanticAnalyzer.unescapeIdentifier(child
+            .getChild(0).getText());
+        if (child.getChildCount() > 1) {
+          for (int i = 1; i < child.getChildCount(); i++) {
+            ASTNode astChild = (ASTNode) child.getChild(i);
+            if (astChild.getToken().getType() == HiveParser.TOK_PARTSPEC) {
+              throw new SemanticException(SentryHiveConstants.PARTITION_PRIVS_NOT_SUPPORTED);
+            } else if (astChild.getToken().getType() == HiveParser.TOK_TABCOLNAME) {
+              cols = BaseSemanticAnalyzer.getColumnNames(astChild);
+            } else if (astChild.getToken().getType() == HiveParser.TOK_URI) {
+              privilegeObject = privilegeObject.replaceAll("'", "").replaceAll("\"", "");
+              ((SentryHivePrivilegeObjectDesc) privHiveObj).setUri(true);
+            } else if (astChild.getToken().getType() == HiveParser.TOK_SERVER) {
+              ((SentryHivePrivilegeObjectDesc) privHiveObj).setServer(true);
+            } else if (astChild.getToken().getType() == HiveParser.TOK_TABLE_TYPE) {
+              ((SentryHivePrivilegeObjectDesc) privHiveObj).setTable(true);
+            }
+          }
+        }
+        privHiveObj.setObject(privilegeObject);
       }else {
         throw new SemanticException("Unrecognized Token: " + child.getToken().getType());
       }
     }
 
     ShowGrantDesc showGrant = new ShowGrantDesc(resultFile.toString(),
-        principalDesc, privHiveObj, null);
+        principalDesc, privHiveObj, cols);
     return createTask(new DDLWork(inputs, outputs, showGrant));
   }
 
@@ -331,7 +352,11 @@ public class SentryHiveAuthorizationTaskFactoryImpl implements HiveAuthorization
         String msg = SentryHiveConstants.PRIVILEGE_NOT_SUPPORTED + privObj.getPriv();
         throw new SemanticException(msg);
       }
-      PrivilegeDesc privilegeDesc = new PrivilegeDesc(privObj, null);
+      List<String> cols = null;
+      if (privilegeDef.getChildCount() > 1) {
+        cols = BaseSemanticAnalyzer.getColumnNames((ASTNode) privilegeDef.getChild(1));
+      }
+      PrivilegeDesc privilegeDesc = new PrivilegeDesc(privObj, cols);
       ret.add(privilegeDesc);
     }
     return ret;

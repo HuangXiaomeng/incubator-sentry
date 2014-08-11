@@ -54,6 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -332,17 +333,36 @@ public class SentryPolicyServiceClient {
   }
 
   public void grantColumnPrivilege(String requestorUserName,
+      String roleName, String server, String db, String table, String columnName, String action)
+  throws SentryUserException {
+    ImmutableList.Builder<String> listBuilder = ImmutableList.builder();
+    listBuilder.add(columnName);
+    grantPrivilege(requestorUserName, roleName, PrivilegeScope.COLUMN, server,
+        null,
+        db, table, listBuilder.build(), action);
+  }
+
+  public void grantColumnPrivilege(String requestorUserName,
+      String roleName, String server, String db, String table, String columnName, String action, Boolean grantOption)
+  throws SentryUserException {
+    ImmutableList.Builder<String> listBuilder = ImmutableList.builder();
+    listBuilder.add(columnName);
+    grantPrivilege(requestorUserName, roleName, PrivilegeScope.COLUMN, server,
+        null, db, table, listBuilder.build(), action, grantOption);
+  }
+
+  public void grantColumnsPrivilege(String requestorUserName,
       String roleName, String server, String db, String table, List<String> columnNames, String action)
   throws SentryUserException {
-    grantPrivilege(requestorUserName, roleName, PrivilegeScope.TABLE, server,
+    grantPrivilege(requestorUserName, roleName, PrivilegeScope.COLUMN, server,
         null,
         db, table, columnNames, action);
   }
 
-  public void grantColumnPrivilege(String requestorUserName,
+  public void grantColumnsPrivilege(String requestorUserName,
       String roleName, String server, String db, String table, List<String> columnNames, String action, Boolean grantOption)
   throws SentryUserException {
-    grantPrivilege(requestorUserName, roleName, PrivilegeScope.TABLE, server,
+    grantPrivilege(requestorUserName, roleName, PrivilegeScope.COLUMN, server,
         null, db, table, columnNames, action, grantOption);
   }
 
@@ -363,6 +383,9 @@ public class SentryPolicyServiceClient {
       } else if (authzble.getTypeName().equalsIgnoreCase(
           DBModelAuthorizable.AuthorizableType.Table.toString())) {
         tSentryAuthorizable.setTable(authzble.getName());
+      } else if (authzble.getTypeName().equalsIgnoreCase(
+          DBModelAuthorizable.AuthorizableType.Column.toString())) {
+        tSentryAuthorizable.setColumn(authzble.getName());
       }
     }
     return tSentryAuthorizable;
@@ -452,20 +475,40 @@ public class SentryPolicyServiceClient {
         db, table, null, action, grantOption);
   }
 
-  public void revokeColumnePrivilege(String requestorUserName, String roleName,
+  public void revokeColumnPrivilege(String requestorUserName, String roleName,
+      String server, String db, String table, String columnName, String action)
+  throws SentryUserException {
+    ImmutableList.Builder<String> listBuilder = ImmutableList.builder();
+    listBuilder.add(columnName);
+    revokePrivilege(requestorUserName, roleName,
+        PrivilegeScope.TABLE, server, null,
+        db, table, listBuilder.build(), action);
+  }
+
+  public void revokeColumnPrivilege(String requestorUserName, String roleName,
+      String server, String db, String table, String columnName, String action, Boolean grantOption)
+  throws SentryUserException {
+    ImmutableList.Builder<String> listBuilder = ImmutableList.builder();
+    listBuilder.add(columnName);
+    revokePrivilege(requestorUserName, roleName,
+        PrivilegeScope.TABLE, server, null,
+        db, table, listBuilder.build(), action, grantOption);
+  }
+
+  public void revokeColumnsPrivilege(String requestorUserName, String roleName,
       String server, String db, String table, List<String> columns, String action)
   throws SentryUserException {
     revokePrivilege(requestorUserName, roleName,
         PrivilegeScope.TABLE, server, null,
-        db, table, null, action);
+        db, table, columns, action);
   }
 
-  public void revokeColumnPrivilege(String requestorUserName, String roleName,
+  public void revokeColumnsPrivilege(String requestorUserName, String roleName,
       String server, String db, String table, List<String> columns, String action, Boolean grantOption)
   throws SentryUserException {
     revokePrivilege(requestorUserName, roleName,
         PrivilegeScope.TABLE, server, null,
-        db, table, null, action, grantOption);
+        db, table, columns, action, grantOption);
   }
 
   private void revokePrivilege(String requestorUserName,

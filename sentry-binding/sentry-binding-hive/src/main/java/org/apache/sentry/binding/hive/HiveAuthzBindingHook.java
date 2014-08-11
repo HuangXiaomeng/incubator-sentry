@@ -56,6 +56,7 @@ import org.apache.sentry.binding.hive.conf.HiveAuthzConf;
 import org.apache.sentry.core.common.Subject;
 import org.apache.sentry.core.common.utils.PathUtils;
 import org.apache.sentry.core.model.db.AccessURI;
+import org.apache.sentry.core.model.db.Column;
 import org.apache.sentry.core.model.db.DBModelAction;
 import org.apache.sentry.core.model.db.DBModelAuthorizable;
 import org.apache.sentry.core.model.db.DBModelAuthorizable.AuthorizableType;
@@ -75,6 +76,7 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
   private final HiveAuthzConf authzConf;
   private Database currDB = Database.ALL;
   private Table currTab;
+  private Set<Column> currColumns;
   private AccessURI udfURI;
   private AccessURI partitionURI;
 
