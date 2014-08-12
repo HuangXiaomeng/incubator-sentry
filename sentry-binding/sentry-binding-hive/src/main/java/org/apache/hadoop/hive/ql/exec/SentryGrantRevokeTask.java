@@ -419,11 +419,11 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
       }
       appendNonNull(builder, privilege.getTableName());
       appendNonNull(builder, null);//getPartValues()
-      appendNonNull(builder, null);//getColumnName()
+      appendNonNull(builder, privilege.getColumnName());//getColumnName()
       appendNonNull(builder, roleName);//getPrincipalName()
       appendNonNull(builder, "ROLE");//getPrincipalType()
       appendNonNull(builder, privilege.getAction());
-      appendNonNull(builder, false);//isGrantOption()
+      appendNonNull(builder, privilege.getGrantOption());//isGrantOption()
       appendNonNull(builder, privilege.getCreateTime() * 1000L);
       appendNonNull(builder, privilege.getGrantorPrincipal());
     }
