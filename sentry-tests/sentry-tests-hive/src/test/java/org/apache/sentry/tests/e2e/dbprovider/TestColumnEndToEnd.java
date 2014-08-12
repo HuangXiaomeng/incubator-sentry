@@ -26,7 +26,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import org.apache.hadoop.security.authorize.AuthorizationException;
 import org.apache.sentry.provider.db.SentryAccessDeniedException;
 import org.apache.sentry.provider.file.PolicyFile;
 import org.apache.sentry.tests.e2e.hive.AbstractTestWithStaticConfiguration;
@@ -36,7 +35,7 @@ import org.junit.Test;
 
 import com.google.common.io.Resources;
 
-public class TestCellEndToEnd extends AbstractTestWithStaticConfiguration {
+public class TestColumnEndToEnd extends AbstractTestWithStaticConfiguration {
   private final String SINGLE_TYPE_DATA_FILE_NAME = "kv1.dat";
   private File dataFile;
   private PolicyFile policyFile;
@@ -65,6 +64,7 @@ public class TestCellEndToEnd extends AbstractTestWithStaticConfiguration {
     Statement statement = context.createStatement(connection);
     statement.execute("CREATE TABLE t1 (c1 string, c2 string)");
     statement.execute("CREATE ROLE user_role");
+    // 1. grant c1 to user_role
     statement.execute("GRANT SELECT (c1) ON TABLE t1 TO ROLE user_role");
     statement.execute("GRANT ROLE user_role TO GROUP " + USERGROUP1);
     statement.close();
@@ -73,25 +73,25 @@ public class TestCellEndToEnd extends AbstractTestWithStaticConfiguration {
     statement = context.createStatement(connection);
     context.assertSentryException(statement, "CREATE ROLE r2",
         SentryAccessDeniedException.class.getSimpleName());
-    // test default of ALL
-    statement.execute("SELECT c1, c2 FROM t1");
-//    context.assertSentryException(statement, "SELECT c1, c2 FROM t1",
-//        SentryAccessDeniedException.class.getSimpleName());
-    // test a specific role
+
+    // 2. select c1,c2 on t1, will throw exception
+    try {
+      statement.execute("SELECT c1, c2 FROM t1");
+      assertTrue("only SELECT allowed on t1.c1!!", false);
+    } catch (Exception e) {
+      // Ignore
+    }
+
+    // 3. test table level authorization
     statement.execute("SET ROLE user_role");
-    statement.execute("SELECT * FROM t1");
-//    context.assertSentryException(statement, "SELECT * FROM t1",
-//        SentryAccessDeniedException.class.getSimpleName());
+    try {
+      // select * from t1 is table scope authorizable, will throw exception
+      statement.execute("SELECT * FROM t1");
+      assertTrue("only SELECT allowed on t1.c1!!", false);
+    } catch (Exception e) {
+      // Ignore
+    }
 
-    /** Dissabling test : see https://issues.apache.org/jira/browse/HIVE-6629
-    // test NONE
-    statement.execute("SET ROLE NONE");
-    context.assertAuthzException(statement, "SELECT * FROM t1");
-    */
-
-    // test ALL
-    statement.execute("SET ROLE ALL");
-    statement.execute("SELECT * FROM t1");
     statement.close();
     connection.close();
   }
