@@ -399,7 +399,7 @@ public class SentryPolicyServiceClient {
   }
 
   private void grantPrivilege(String requestorUserName,
-      String roleName, PrivilegeScope scope, String serverName, String uri, String db, String table, 
+      String roleName, PrivilegeScope scope, String serverName, String uri, String db, String table,
       List<String> columns, String action, Boolean grantOption)
   throws SentryUserException {
     TAlterSentryRoleGrantPrivilegeRequest request = new TAlterSentryRoleGrantPrivilegeRequest();
@@ -407,7 +407,7 @@ public class SentryPolicyServiceClient {
     request.setRequestorUserName(requestorUserName);
     request.setRoleName(roleName);
     Set<TSentryPrivilege> privileges = convertColumnPrivileges(requestorUserName, scope,
-        serverName, uri, db, table, columns, action, false);
+        serverName, uri, db, table, columns, action, grantOption);
     request.setPrivileges(privileges);
     try {
       TAlterSentryRoleGrantPrivilegeResponse response = client.alter_sentry_role_grant_privilege(request);
@@ -527,7 +527,7 @@ public class SentryPolicyServiceClient {
     request.setRequestorUserName(requestorUserName);
     request.setRoleName(roleName);
     Set<TSentryPrivilege> privileges = convertColumnPrivileges(requestorUserName, scope,
-        serverName, uri, db, table, columns, action, false);
+        serverName, uri, db, table, columns, action, grantOption);
     request.setPrivileges(privileges);
     try {
       TAlterSentryRoleRevokePrivilegeResponse response = client.alter_sentry_role_revoke_privilege(request);
@@ -541,7 +541,7 @@ public class SentryPolicyServiceClient {
       PrivilegeScope scope, String serverName, String uri, String db, String table, List<String> columns,
       String action, Boolean grantOption) {
     ImmutableSet.Builder<TSentryPrivilege> setBuilder = ImmutableSet.builder();
-    if (columns == null) {
+    if (columns == null || columns.isEmpty()) {
       TSentryPrivilege privilege = new TSentryPrivilege();
       privilege.setPrivilegeScope(scope.toString());
       privilege.setServerName(serverName);
