@@ -431,17 +431,17 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
           }
           continue;
         }
-        if (readEntity.getTyp() == org.apache.hadoop.hive.ql.hooks.Entity.Type.TABLE || 
+        if (readEntity.getTyp() == org.apache.hadoop.hive.ql.hooks.Entity.Type.TABLE ||
             readEntity.getTyp() == org.apache.hadoop.hive.ql.hooks.Entity.Type.PARTITION) {
           List<FieldSchema> cols = readEntity.getTable().getCols();
           if (cols != null && !cols.isEmpty()) {
             addColumnHierarchy(inputHierarchy, readEntity, cols);
-          } else {
-            List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
-            entityHierarchy.add(hiveAuthzBinding.getAuthServer());
-            entityHierarchy.addAll(getAuthzHierarchyFromEntity(readEntity));
-            inputHierarchy.add(entityHierarchy);
           }
+        } else {
+          List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
+          entityHierarchy.add(hiveAuthzBinding.getAuthServer());
+          entityHierarchy.addAll(getAuthzHierarchyFromEntity(readEntity));
+          inputHierarchy.add(entityHierarchy);
         }
       }
       for (WriteEntity writeEntity: outputs) {

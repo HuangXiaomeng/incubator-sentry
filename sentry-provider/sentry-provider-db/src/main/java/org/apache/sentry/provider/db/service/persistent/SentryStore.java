@@ -764,7 +764,7 @@ public class SentryStore {
             if ((authHierarchy.getColumn() != null)
                 && !AccessConstants.ALL
                     .equalsIgnoreCase(authHierarchy.getColumn())) {
-              filters.append(" && ((columnName == \"" + authHierarchy.getColumn().toLowerCase() + "\") || (columnNames == \"__NULL__\")) && (URI == \"__NULL__\")");
+              filters.append(" && ((columnName == \"" + authHierarchy.getColumn().toLowerCase() + "\") || (columnName == \"__NULL__\")) && (URI == \"__NULL__\")");
             }
           }
         }
