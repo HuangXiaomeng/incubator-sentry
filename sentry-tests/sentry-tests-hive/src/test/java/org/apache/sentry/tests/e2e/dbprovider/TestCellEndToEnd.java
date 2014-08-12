@@ -64,7 +64,7 @@ public class TestCellEndToEnd extends AbstractTestWithStaticConfiguration {
     Statement statement = context.createStatement(connection);
     statement.execute("CREATE TABLE t1 (c1 string, c2 string)");
     statement.execute("CREATE ROLE user_role");
-    statement.execute("GRANT SELECT (c1, c2) ON TABLE t1 TO ROLE user_role");
+    statement.execute("GRANT SELECT (c1) ON TABLE t1 TO ROLE user_role");
     statement.execute("GRANT ROLE user_role TO GROUP " + USERGROUP1);
     statement.close();
     connection.close();
