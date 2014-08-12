@@ -206,27 +206,7 @@ public class SentryHiveAuthorizationTaskFactoryImpl implements HiveAuthorization
     if (ast.getChildCount() > 1) {
       ASTNode child = (ASTNode) ast.getChild(1);
       if (child.getToken().getType() == HiveParser.TOK_PRIV_OBJECT_COL) {
-        privHiveObj = new SentryHivePrivilegeObjectDesc();
-        String privilegeObject = BaseSemanticAnalyzer.unescapeIdentifier(child
-            .getChild(0).getText());
-        if (child.getChildCount() > 1) {
-          for (int i = 1; i < child.getChildCount(); i++) {
-            ASTNode astChild = (ASTNode) child.getChild(i);
-            if (astChild.getToken().getType() == HiveParser.TOK_PARTSPEC) {
-              throw new SemanticException(SentryHiveConstants.PARTITION_PRIVS_NOT_SUPPORTED);
-            } else if (astChild.getToken().getType() == HiveParser.TOK_TABCOLNAME) {
-              cols = BaseSemanticAnalyzer.getColumnNames(astChild);
-            } else if (astChild.getToken().getType() == HiveParser.TOK_URI) {
-              privilegeObject = privilegeObject.replaceAll("'", "").replaceAll("\"", "");
-              ((SentryHivePrivilegeObjectDesc) privHiveObj).setUri(true);
-            } else if (astChild.getToken().getType() == HiveParser.TOK_SERVER) {
-              ((SentryHivePrivilegeObjectDesc) privHiveObj).setServer(true);
-            } else if (astChild.getToken().getType() == HiveParser.TOK_TABLE_TYPE) {
-              ((SentryHivePrivilegeObjectDesc) privHiveObj).setTable(true);
-            }
-          }
-        }
-        privHiveObj.setObject(privilegeObject);
+        privHiveObj = analyzePrivilegeObject(child);
       }else {
         throw new SemanticException("Unrecognized Token: " + child.getToken().getType());
       }
@@ -301,6 +281,8 @@ public class SentryHiveAuthorizationTaskFactoryImpl implements HiveAuthorization
         ASTNode astChild = (ASTNode) ast.getChild(i);
         if (astChild.getToken().getType() == HiveParser.TOK_PARTSPEC) {
           throw new SemanticException(SentryHiveConstants.PARTITION_PRIVS_NOT_SUPPORTED);
+        } else if (astChild.getToken().getType() == HiveParser.TOK_TABCOLNAME) {
+          subject.setColumns(BaseSemanticAnalyzer.getColumnNames(astChild));
         } else if (astChild.getToken().getType() == HiveParser.TOK_URI) {
           privilegeObject = privilegeObject.replaceAll("'", "").replaceAll("\"", "");
           subject.setUri(true);
