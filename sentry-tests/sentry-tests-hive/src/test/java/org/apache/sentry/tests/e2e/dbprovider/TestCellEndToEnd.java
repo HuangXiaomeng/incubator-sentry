@@ -26,6 +26,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import org.apache.hadoop.security.authorize.AuthorizationException;
 import org.apache.sentry.provider.db.SentryAccessDeniedException;
 import org.apache.sentry.provider.file.PolicyFile;
 import org.apache.sentry.tests.e2e.hive.AbstractTestWithStaticConfiguration;
@@ -74,9 +75,13 @@ public class TestCellEndToEnd extends AbstractTestWithStaticConfiguration {
         SentryAccessDeniedException.class.getSimpleName());
     // test default of ALL
     statement.execute("SELECT c1, c2 FROM t1");
+//    context.assertSentryException(statement, "SELECT c1, c2 FROM t1",
+//        SentryAccessDeniedException.class.getSimpleName());
     // test a specific role
     statement.execute("SET ROLE user_role");
     statement.execute("SELECT * FROM t1");
+//    context.assertSentryException(statement, "SELECT * FROM t1",
+//        SentryAccessDeniedException.class.getSimpleName());
 
     /** Dissabling test : see https://issues.apache.org/jira/browse/HIVE-6629
     // test NONE
