@@ -580,12 +580,13 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
 
   private void addColumnHierarchy(List<List<DBModelAuthorizable>> inputHierarchy,
       ReadEntity entity, List<FieldSchema> cols) {
+    List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
+    entityHierarchy.add(hiveAuthzBinding.getAuthServer());
+    entityHierarchy.addAll(getAuthzHierarchyFromEntity(entity));
     for (FieldSchema col : cols) {
-      List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
-      entityHierarchy.add(hiveAuthzBinding.getAuthServer());
-      entityHierarchy.addAll(getAuthzHierarchyFromEntity(entity));
+      List<DBModelAuthorizable> colHierarchy = new ArrayList<DBModelAuthorizable>(entityHierarchy);
       entityHierarchy.add(new Column(col.getName()));
-      inputHierarchy.add(entityHierarchy);
+      inputHierarchy.add(colHierarchy);
     }
   }
 
