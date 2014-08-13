@@ -80,7 +80,7 @@ public class TestPolicyImport extends AbstractTestWithStaticConfiguration {
     policyFile.addPermissionsToRole("customers_admin_role", "server=server1->db=customers");
     policyFile.addPermissionsToRole("customers_insert_role", "server=server1->db=customers->table=*->action=insert");
     policyFile.addPermissionsToRole("customers_select_role", "server=server1->db=customers->table=*->action=select");
-    policyFile.addPermissionsToRole("sss", "server=server1->db=customers->table=t1->column=c1->action=select");
+    policyFile.addPermissionsToRole("sss", "server=server1->db=customers->table=customer_info->column=salary->action=select");
 
     policyFile.write(context.getPolicyFile());
 
@@ -109,7 +109,7 @@ public class TestPolicyImport extends AbstractTestWithStaticConfiguration {
     verifyPrivileges(client, "customers_select_role",
         createPrivilege(AccessConstants.SELECT, "customers", null, null));
     verifyPrivileges(client, "sss",
-        createPrivilege(AccessConstants.SELECT, "customers", "t1", "c1", null));
+        createPrivilege(AccessConstants.SELECT, "customers", "customer_info", "salary", null));
   }
 
   private void verifyRoles(SentryPolicyServiceClient client, String group, String ... roles) throws SentryUserException {
