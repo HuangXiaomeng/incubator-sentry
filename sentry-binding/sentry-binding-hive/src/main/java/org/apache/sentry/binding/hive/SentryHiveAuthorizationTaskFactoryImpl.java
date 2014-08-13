@@ -179,7 +179,7 @@ public class SentryHiveAuthorizationTaskFactoryImpl implements HiveAuthorization
   @Override
   public Task<? extends Serializable> createShowGrantTask(ASTNode ast, Path resultFile, HashSet<ReadEntity> inputs,
       HashSet<WriteEntity> outputs) throws SemanticException {
-    PrivilegeObjectDesc privHiveObj = null;
+    SentryHivePrivilegeObjectDesc privHiveObj = null;
 
     ASTNode principal = (ASTNode) ast.getChild(0);
     PrincipalType type = PrincipalType.USER;
@@ -207,6 +207,7 @@ public class SentryHiveAuthorizationTaskFactoryImpl implements HiveAuthorization
       ASTNode child = (ASTNode) ast.getChild(1);
       if (child.getToken().getType() == HiveParser.TOK_PRIV_OBJECT_COL) {
         privHiveObj = analyzePrivilegeObject(child);
+        cols = privHiveObj.getColumns();
       }else {
         throw new SemanticException("Unrecognized Token: " + child.getToken().getType());
       }
