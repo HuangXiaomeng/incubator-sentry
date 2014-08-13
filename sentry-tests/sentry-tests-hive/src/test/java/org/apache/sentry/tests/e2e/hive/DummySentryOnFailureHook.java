@@ -34,7 +34,6 @@ public class DummySentryOnFailureHook implements SentryOnFailureHook {
   public static HiveOperation hiveOp;
   public static Database db;
   public static Table table;
-  public static Column column;
   public static AuthorizationException exception;
 
   @Override
@@ -44,7 +43,6 @@ public class DummySentryOnFailureHook implements SentryOnFailureHook {
     hiveOp = failureHookContext.getHiveOp();
     db = failureHookContext.getDatabase();
     table = failureHookContext.getTable();
-    column = failureHookContext.getColumn();
     exception = failureHookContext.getException();
   }
 }

@@ -26,7 +26,6 @@ import org.apache.hadoop.hive.ql.hooks.WriteEntity;
 import org.apache.hadoop.hive.ql.metadata.AuthorizationException;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.sentry.core.model.db.AccessURI;
-import org.apache.sentry.core.model.db.Column;
 import org.apache.sentry.core.model.db.Database;
 import org.apache.sentry.core.model.db.Table;
 
@@ -75,11 +74,6 @@ public interface SentryOnFailureHookContext  {
    * @return the table object
    */
   public Table getTable();
-
-  /**
-   * @return the column object
-   */
-  public Column getColumn();
 
   /**
    * @return the udf URI
