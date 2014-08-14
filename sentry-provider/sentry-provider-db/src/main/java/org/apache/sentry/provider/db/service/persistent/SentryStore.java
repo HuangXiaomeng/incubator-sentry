@@ -1330,9 +1330,20 @@ public class SentryStore {
       roleSet.addAll(ImmutableSet.copyOf((mPrivilege.getRoles())));
     }
     for (MSentryRole role : roleSet) {
+      // 1. get privilege and child privileges
+      Set<MSentryPrivilege> privilegeGraph = Sets.newHashSet();
+      privilegeGraph.add(mPrivilege);
+      populateChildren(Sets.newHashSet(role.getRoleName()), mPrivilege, privilegeGraph);
+      // 2. revoke privilege and child privileges
       alterSentryRoleRevokePrivilegeCore(pm, role.getRoleName(), tPrivilege);
+      // 3. add new privilege and child privileges with new tableName
       if (newTPrivilege != null) {
-        alterSentryRoleGrantPrivilegeCore(pm, role.getRoleName(), newTPrivilege);
+        for (MSentryPrivilege m : privilegeGraph) {
+          TSentryPrivilege t = convertToTSentryPrivilege(m);
+          t.setDbName(newTPrivilege.getDbName());
+          t.setTableName(newTPrivilege.getTableName());
+          alterSentryRoleGrantPrivilegeCore(pm, role.getRoleName(), t);
+        }
       }
     }
   }
