@@ -1327,8 +1327,11 @@ public class SentryStore {
         for (MSentryPrivilege m : privilegeGraph) {
           TSentryPrivilege t = convertToTSentryPrivilege(m);
           t.setGrantorPrincipal(newTPrivilege.getGrantorPrincipal());
-          t.setDbName(newTPrivilege.getDbName());
-          t.setTableName(newTPrivilege.getTableName());
+          if (newTPrivilege.getPrivilegeScope().equals(PrivilegeScope.DATABASE.name())) {
+            t.setDbName(newTPrivilege.getDbName());
+          } else if (newTPrivilege.getPrivilegeScope().equals(PrivilegeScope.TABLE.name())) {
+            t.setTableName(newTPrivilege.getTableName());
+          }
           alterSentryRoleGrantPrivilegeCore(pm, role.getRoleName(), t);
         }
       }
