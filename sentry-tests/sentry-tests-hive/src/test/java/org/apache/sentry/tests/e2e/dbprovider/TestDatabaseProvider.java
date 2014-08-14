@@ -1427,6 +1427,46 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
   }
 
   /**
+   * SHOW GRANT ROLE roleName ON COLUMN colName
+   * @throws Exception
+   */
+  @Test
+  public void testShowPrivilegesByRoleOnObjectGivenColumn() throws Exception {
+    Connection connection = context.createConnection(ADMIN1);
+    Statement statement = context.createStatement(connection);
+    statement.execute("CREATE ROLE role1");
+    statement.execute("GRANT SELECT (c1) ON TABLE t1 TO ROLE role1");
+
+    //On table - positive
+    ResultSet resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t1 (c1)");
+    int rowCount = 0 ;
+    while ( resultSet.next()) {
+      rowCount++;
+      assertThat(resultSet.getString(1), equalToIgnoringCase("default"));
+      assertThat(resultSet.getString(2), equalToIgnoringCase("t1"));
+      assertThat(resultSet.getString(3), equalToIgnoringCase(""));//partition
+      assertThat(resultSet.getString(4), equalToIgnoringCase("c1"));//column
+      assertThat(resultSet.getString(5), equalToIgnoringCase("role1"));//principalName
+      assertThat(resultSet.getString(6), equalToIgnoringCase("role"));//principalType
+      assertThat(resultSet.getString(7), equalToIgnoringCase("select"));
+      assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
+      //Create time is not tested
+      //assertThat(resultSet.getLong(9), is(new Long(0)));
+      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+    }
+    assertThat(rowCount, is(1));
+    //On table - negative
+    resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t1 (c2)");
+    rowCount = 0 ;
+    while (resultSet.next()) {
+      rowCount++;
+    }
+    assertThat(rowCount, is(0));
+    statement.close();
+    connection.close();
+  }
+
+  /**
    * SHOW GRANT ROLE roleName ON TABLE tableName
    * @throws Exception
    */
@@ -1467,7 +1507,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
   }
 
     /**
-     * SHOW GRANT ROLE roleName ON TABLE tableName
+     * SHOW GRANT ROLE roleName ON DATABASE databaseName
      * @throws Exception
      */
   @Test
@@ -1523,7 +1563,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
   }
 
   /**
-   * SHOW GRANT ROLE roleName ON TABLE tableName
+   * SHOW GRANT ROLE roleName ON SERVER serverName
    * @throws Exception
    */
   @Test
@@ -1570,7 +1610,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
   }
 
   /**
-   * SHOW GRANT ROLE roleName ON DATABASE dbName: Needs Hive patch
+   * SHOW GRANT ROLE roleName ON URI uriName: Needs Hive patch
    * @throws Exception
    */
   @Ignore
