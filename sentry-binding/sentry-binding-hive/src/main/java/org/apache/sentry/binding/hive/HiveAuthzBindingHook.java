@@ -26,6 +26,7 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.hive.common.JavaUtils;
@@ -56,6 +57,7 @@ import org.apache.sentry.binding.hive.conf.HiveAuthzConf;
 import org.apache.sentry.core.common.Subject;
 import org.apache.sentry.core.common.utils.PathUtils;
 import org.apache.sentry.core.model.db.AccessURI;
+import org.apache.sentry.core.model.db.Column;
 import org.apache.sentry.core.model.db.DBModelAction;
 import org.apache.sentry.core.model.db.DBModelAuthorizable;
 import org.apache.sentry.core.model.db.DBModelAuthorizable.AuthorizableType;
@@ -429,10 +431,15 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
           }
           continue;
         }
-        List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
-        entityHierarchy.add(hiveAuthzBinding.getAuthServer());
-        entityHierarchy.addAll(getAuthzHierarchyFromEntity(readEntity));
-        inputHierarchy.add(entityHierarchy);
+        HiveAuthzBindingHookContext sentryContext = (HiveAuthzBindingHookContext)context;
+        if (sentryContext.hasColumns()) {
+            addColumnHierarchy(inputHierarchy, readEntity, sentryContext);
+        } else {
+          List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
+          entityHierarchy.add(hiveAuthzBinding.getAuthServer());
+          entityHierarchy.addAll(getAuthzHierarchyFromEntity(readEntity));
+          inputHierarchy.add(entityHierarchy);
+        }
       }
       for (WriteEntity writeEntity: outputs) {
         if (filterWriteEntity(writeEntity)) {
@@ -566,6 +573,44 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
           entity.getType().name());
     }
     return objectHierarchy;
+  }
+
+  /**
+   * Add column level hierarchy to inputHierarchy
+   *
+   * @param inputHierarchy
+   * @param entity
+   * @param sentryContext
+   */
+  private void addColumnHierarchy(List<List<DBModelAuthorizable>> inputHierarchy,
+      ReadEntity entity, HiveAuthzBindingHookContext sentryContext) {
+    List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
+    entityHierarchy.add(hiveAuthzBinding.getAuthServer());
+    entityHierarchy.addAll(getAuthzHierarchyFromEntity(entity));
+
+    // column on table
+    if (entity.getType() == org.apache.hadoop.hive.ql.hooks.Entity.Type.TABLE) {
+      Map<org.apache.hadoop.hive.ql.metadata.Table, List<String>> tab2Cols = sentryContext.getTab2Cols();
+      if (tab2Cols != null && !tab2Cols.isEmpty()) {
+        for (String col : tab2Cols.get(entity.getTable())) {
+          List<DBModelAuthorizable> colHierarchy = new ArrayList<DBModelAuthorizable>(entityHierarchy);
+          colHierarchy.add(new Column(col));
+          inputHierarchy.add(colHierarchy);
+        }
+      }
+    }
+
+    // column on partition
+    if (entity.getType() == org.apache.hadoop.hive.ql.hooks.Entity.Type.PARTITION) {
+      Map<org.apache.hadoop.hive.ql.metadata.Partition, List<String>> part2Cols = sentryContext.getPart2Cols();
+      if (part2Cols != null && !part2Cols.isEmpty()) {
+        for (String col : part2Cols.get(entity.getPartition())) {
+          List<DBModelAuthorizable> colHierarchy = new ArrayList<DBModelAuthorizable>(entityHierarchy);
+          colHierarchy.add(new Column(col));
+          inputHierarchy.add(colHierarchy);
+        }
+      }
+    }
   }
 
   // Check if this write entity needs to skipped
