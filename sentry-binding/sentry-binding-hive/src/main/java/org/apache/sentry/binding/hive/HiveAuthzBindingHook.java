@@ -433,7 +433,7 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
         }
         HiveAuthzBindingHookContext sentryContext = (HiveAuthzBindingHookContext)context;
         if (sentryContext.hasColumns()) {
-            addColumnHierarchy(inputHierarchy, readEntity, sentryContext);
+          addColumnHierarchy(inputHierarchy, readEntity, sentryContext);
         } else {
           List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
           entityHierarchy.add(hiveAuthzBinding.getAuthServer());
