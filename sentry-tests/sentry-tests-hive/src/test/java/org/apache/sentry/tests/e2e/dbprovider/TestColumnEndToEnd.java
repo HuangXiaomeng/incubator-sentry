@@ -138,6 +138,8 @@ public class TestColumnEndToEnd extends AbstractTestWithStaticConfiguration {
   public void testPostive() throws Exception {
     Connection connection = context.createConnection(ADMIN1);
     Statement statement = context.createStatement(connection);
+    statement.execute("CREATE database db1");
+    statement.execute("use db1");
     statement.execute("CREATE TABLE t1 (c1 string, c2 string)");
     statement.execute("CREATE ROLE user_role1");
     statement.execute("CREATE ROLE user_role2");
@@ -154,11 +156,13 @@ public class TestColumnEndToEnd extends AbstractTestWithStaticConfiguration {
     // 1 user_role1 select c1 on t1
     connection = context.createConnection(USER1_1);
     statement = context.createStatement(connection);
+    statement.execute("use db1");
     statement.execute("SELECT c1 FROM t1");
 
     // 2.1 user_role2 select c1,c2 on t1
     connection = context.createConnection(USER2_1);
     statement = context.createStatement(connection);
+    statement.execute("use db1");
     statement.execute("SELECT c1,c2 FROM t1");
     // 2.2 user_role2 select * on t1
     statement.execute("SELECT * FROM t1");
@@ -166,6 +170,7 @@ public class TestColumnEndToEnd extends AbstractTestWithStaticConfiguration {
     // 3.1 user_role3 select * on t1
     connection = context.createConnection(USER3_1);
     statement = context.createStatement(connection);
+    statement.execute("use db1");
     statement.execute("SELECT * FROM t1");
     // 3.2 user_role3 select c1,c2 on t1
     statement.execute("SELECT c1,c2 FROM t1");

@@ -472,6 +472,7 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
       connectHierarchy.add(hiveAuthzBinding.getAuthServer());
       // by default allow connect access to default db
       Table currTbl = Table.ALL;
+      Column currCol = Column.ALL;
       if ((DEFAULT_DATABASE_NAME.equalsIgnoreCase(currDB.getName()) &&
           "false".equalsIgnoreCase(authzConf.
               get(HiveAuthzConf.AuthzConfVars.AUTHZ_RESTRICT_DEFAULT_DB.getVar(), "false")))
@@ -483,6 +484,7 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
 
       connectHierarchy.add(currDB);
       connectHierarchy.add(currTbl);
+      connectHierarchy.add(currCol);
 
       inputHierarchy.add(connectHierarchy);
       // check if this is a create temp function and we need to validate URI
@@ -650,7 +652,7 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
     List<String> filteredResult = new ArrayList<String>();
     Subject subject = new Subject(userName);
     HiveAuthzPrivileges tableMetaDataPrivilege = new HiveAuthzPrivileges.AuthzPrivilegeBuilder().
-        addInputObjectPriviledge(AuthorizableType.Table, EnumSet.of(DBModelAction.SELECT, DBModelAction.INSERT)).
+        addInputObjectPriviledge(AuthorizableType.Column, EnumSet.of(DBModelAction.SELECT, DBModelAction.INSERT)).
         setOperationScope(HiveOperationScope.TABLE).
         setOperationType(HiveOperationType.INFO).
         build();
@@ -667,6 +669,7 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
       externalAuthorizableHierarchy.add(hiveAuthzBinding.getAuthServer());
       externalAuthorizableHierarchy.add(database);
       externalAuthorizableHierarchy.add(table);
+      externalAuthorizableHierarchy.add(Column.ALL);
       inputHierarchy.add(externalAuthorizableHierarchy);
 
       try {
@@ -689,7 +692,7 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
     List<String> filteredResult = new ArrayList<String>();
     Subject subject = new Subject(userName);
     HiveAuthzPrivileges anyPrivilege = new HiveAuthzPrivileges.AuthzPrivilegeBuilder().
-        addInputObjectPriviledge(AuthorizableType.Table, EnumSet.of(DBModelAction.SELECT, DBModelAction.INSERT)).
+        addInputObjectPriviledge(AuthorizableType.Column, EnumSet.of(DBModelAction.SELECT, DBModelAction.INSERT)).
         addInputObjectPriviledge(AuthorizableType.URI, EnumSet.of(DBModelAction.SELECT)).
         setOperationScope(HiveOperationScope.CONNECT).
         setOperationType(HiveOperationType.QUERY).
@@ -717,6 +720,7 @@ hiveAuthzBinding.getAuthzConf().get(
       externalAuthorizableHierarchy.add(hiveAuthzBinding.getAuthServer());
       externalAuthorizableHierarchy.add(database);
       externalAuthorizableHierarchy.add(Table.ALL);
+      externalAuthorizableHierarchy.add(Column.ALL);
       inputHierarchy.add(externalAuthorizableHierarchy);
 
       try {
