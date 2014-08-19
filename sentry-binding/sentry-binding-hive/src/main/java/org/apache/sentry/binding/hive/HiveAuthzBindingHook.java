@@ -594,10 +594,13 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
     if (entity.getType() == org.apache.hadoop.hive.ql.hooks.Entity.Type.TABLE) {
       Map<org.apache.hadoop.hive.ql.metadata.Table, List<String>> tab2Cols = sentryContext.getTab2Cols();
       if (tab2Cols != null && !tab2Cols.isEmpty()) {
-        for (String col : tab2Cols.get(entity.getTable())) {
-          List<DBModelAuthorizable> colHierarchy = new ArrayList<DBModelAuthorizable>(entityHierarchy);
-          colHierarchy.add(new Column(col));
-          inputHierarchy.add(colHierarchy);
+        List<String> cols = tab2Cols.get(entity.getTable());
+        if (cols != null && !cols.isEmpty()) {
+          for (String col : cols) {
+            List<DBModelAuthorizable> colHierarchy = new ArrayList<DBModelAuthorizable>(entityHierarchy);
+            colHierarchy.add(new Column(col));
+            inputHierarchy.add(colHierarchy);
+          }
         }
       }
     }
@@ -606,12 +609,18 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
     if (entity.getType() == org.apache.hadoop.hive.ql.hooks.Entity.Type.PARTITION) {
       Map<org.apache.hadoop.hive.ql.metadata.Partition, List<String>> part2Cols = sentryContext.getPart2Cols();
       if (part2Cols != null && !part2Cols.isEmpty()) {
-        for (String col : part2Cols.get(entity.getPartition())) {
-          List<DBModelAuthorizable> colHierarchy = new ArrayList<DBModelAuthorizable>(entityHierarchy);
-          colHierarchy.add(new Column(col));
-          inputHierarchy.add(colHierarchy);
+        if (part2Cols != null && !part2Cols.isEmpty()) {
+          for (String col : part2Cols.get(entity.getPartition())) {
+            List<DBModelAuthorizable> colHierarchy = new ArrayList<DBModelAuthorizable>(entityHierarchy);
+            colHierarchy.add(new Column(col));
+            inputHierarchy.add(colHierarchy);
+          }
         }
       }
+    }
+
+    if (inputHierarchy.isEmpty()) {
+      inputHierarchy.add(entityHierarchy);
     }
   }
 
