@@ -372,7 +372,7 @@ public class TestHiveAuthzBindings {
 
   private List <DBModelAuthorizable>  buildObjectHierarchy(String server, String db, String table, String column) {
     List <DBModelAuthorizable> authList = buildObjectHierarchy(server, db, table);
-    if (server != null && db != null && column != null) {
+    if (server != null && db != null && table != null && column != null) {
       authList.add(new Column(column));
     }
     return authList;
