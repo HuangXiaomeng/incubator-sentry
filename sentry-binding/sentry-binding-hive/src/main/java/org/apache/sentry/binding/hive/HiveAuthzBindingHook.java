@@ -26,7 +26,6 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.hive.common.JavaUtils;
@@ -431,9 +430,8 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
           }
           continue;
         }
-        HiveAuthzBindingHookContext sentryContext = (HiveAuthzBindingHookContext)context;
-        if (sentryContext.hasColumns()) {
-          addColumnHierarchy(inputHierarchy, readEntity, sentryContext);
+        if (readEntity.getAccessedColumns() != null && !readEntity.getAccessedColumns().isEmpty()) {
+          addColumnHierarchy(inputHierarchy, readEntity);
         } else {
           List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
           entityHierarchy.add(hiveAuthzBinding.getAuthServer());
@@ -585,41 +583,22 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
    * @param sentryContext
    */
   private void addColumnHierarchy(List<List<DBModelAuthorizable>> inputHierarchy,
-      ReadEntity entity, HiveAuthzBindingHookContext sentryContext) {
+      ReadEntity entity) {
     List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
     entityHierarchy.add(hiveAuthzBinding.getAuthServer());
     entityHierarchy.addAll(getAuthzHierarchyFromEntity(entity));
 
-    // column on table
-    if (entity.getType() == org.apache.hadoop.hive.ql.hooks.Entity.Type.TABLE) {
-      Map<org.apache.hadoop.hive.ql.metadata.Table, List<String>> tab2Cols = sentryContext.getTab2Cols();
-      if (tab2Cols != null && !tab2Cols.isEmpty()) {
-        List<String> cols = tab2Cols.get(entity.getTable());
-        if (cols != null && !cols.isEmpty()) {
-          for (String col : cols) {
-            List<DBModelAuthorizable> colHierarchy = new ArrayList<DBModelAuthorizable>(entityHierarchy);
-            colHierarchy.add(new Column(col));
-            inputHierarchy.add(colHierarchy);
-          }
-        }
+    switch (entity.getType()) {
+    case TABLE:
+    case PARTITION:
+      List<String> cols = entity.getAccessedColumns();
+      for (String col : cols) {
+        List<DBModelAuthorizable> colHierarchy = new ArrayList<DBModelAuthorizable>(entityHierarchy);
+        colHierarchy.add(new Column(col));
+        inputHierarchy.add(colHierarchy);
       }
-    }
-
-    // column on partition
-    if (entity.getType() == org.apache.hadoop.hive.ql.hooks.Entity.Type.PARTITION) {
-      Map<org.apache.hadoop.hive.ql.metadata.Partition, List<String>> part2Cols = sentryContext.getPart2Cols();
-      if (part2Cols != null && !part2Cols.isEmpty()) {
-        if (part2Cols != null && !part2Cols.isEmpty()) {
-          for (String col : part2Cols.get(entity.getPartition())) {
-            List<DBModelAuthorizable> colHierarchy = new ArrayList<DBModelAuthorizable>(entityHierarchy);
-            colHierarchy.add(new Column(col));
-            inputHierarchy.add(colHierarchy);
-          }
-        }
-      }
-    }
-
-    if (inputHierarchy.isEmpty()) {
+      break;
+    default:
       inputHierarchy.add(entityHierarchy);
     }
   }

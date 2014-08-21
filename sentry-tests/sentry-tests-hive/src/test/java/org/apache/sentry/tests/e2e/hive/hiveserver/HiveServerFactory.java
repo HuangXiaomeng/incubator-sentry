@@ -30,7 +30,6 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
-import org.apache.sentry.binding.hive.HiveAuthzBindingHookContext;
 import org.apache.sentry.binding.hive.conf.HiveAuthzConf;
 import org.apache.sentry.binding.hive.conf.HiveAuthzConf.AuthzConfVars;
 import org.apache.sentry.provider.file.LocalGroupResourceAuthorizationProvider;
@@ -162,8 +161,7 @@ public class HiveServerFactory {
         "org.apache.sentry.binding.metastore.SentryHiveMetaStoreClient");
 
     properties.put(ConfVars.HIVESTATSAUTOGATHER.varname, "false");
-    properties.put(ConfVars.SEMANTIC_ANALYZER_HOOK_CONTEXT.varname,
-        HiveAuthzBindingHookContext.class.getName());
+    properties.put(ConfVars.HIVE_STATS_COLLECT_SCANCOLS.varname, "true");
     String hadoopBinPath = properties.get(HADOOPBIN);
     Assert.assertNotNull(hadoopBinPath, "Hadoop Bin");
     File hadoopBin = new File(hadoopBinPath);
