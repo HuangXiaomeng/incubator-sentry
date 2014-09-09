@@ -23,6 +23,7 @@ import org.apache.hadoop.hive.ql.metadata.AuthorizationException;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.sentry.binding.hive.SentryOnFailureHook;
 import org.apache.sentry.binding.hive.SentryOnFailureHookContext;
+import org.apache.sentry.core.model.db.Column;
 import org.apache.sentry.core.model.db.Database;
 import org.apache.sentry.core.model.db.Table;
 import org.apache.sentry.provider.db.SentryAccessDeniedException;

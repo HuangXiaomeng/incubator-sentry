@@ -87,6 +87,20 @@ public class TestColumnEndToEnd extends AbstractTestWithStaticConfiguration {
     statement.execute("CREATE ROLE user_role2");
     statement.execute("GRANT SELECT (c1) ON TABLE t1 TO ROLE user_role1");
     statement.execute("GRANT SELECT (c1,c2) ON TABLE t1 TO ROLE user_role2");
+    try {
+      statement.execute("GRANT INSERT (c2) ON TABLE t1 TO ROLE user_role2");
+      assertTrue("Sentry should not support privilege: Insert on Column", false);
+    } catch (Exception e) {
+      assertTrue("The error should be 'Sentry does not support privilege: Insert on Column'",
+          e.getMessage().contains("Sentry does not support privilege: Insert on Column"));
+    }
+    try {
+      statement.execute("GRANT ALL (c2) ON TABLE t1 TO ROLE user_role2");
+      assertTrue("Sentry should not support privilege: ALL on Column", false);
+    } catch (Exception e) {
+      assertTrue("The error should be 'Sentry does not support privilege: All on Column'",
+          e.getMessage().contains("Sentry does not support privilege: All on Column"));
+    }
     statement.execute("GRANT ROLE user_role1 TO GROUP " + USERGROUP1);
     statement.execute("GRANT ROLE user_role2 TO GROUP " + USERGROUP2);
     statement.close();
