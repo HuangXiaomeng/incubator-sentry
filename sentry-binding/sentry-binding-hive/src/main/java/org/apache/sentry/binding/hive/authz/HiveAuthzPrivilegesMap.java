@@ -169,7 +169,8 @@ public class HiveAuthzPrivilegesMap {
         build();
 
     HiveAuthzPrivileges anyPrivilege = new HiveAuthzPrivileges.AuthzPrivilegeBuilder().
-        addInputObjectPriviledge(AuthorizableType.Column, EnumSet.of(DBModelAction.SELECT, DBModelAction.INDEX)).
+        addInputObjectPriviledge(AuthorizableType.Column, EnumSet.of(DBModelAction.SELECT,
+            DBModelAction.ALTER, DBModelAction.INDEX)).
         addInputObjectPriviledge(AuthorizableType.URI, EnumSet.of(DBModelAction.ALL)). //TODO: make them ||
         setOperationScope(HiveOperationScope.CONNECT).
         setOperationType(HiveOperationType.QUERY).
