@@ -273,15 +273,22 @@ public class SentryStore {
 
   public CommitContext alterSentryRoleGrantPrivilege(String roleName, TSentryPrivilege privilege)
       throws SentryUserException {
+    return alterSentryRoleGrantPrivileges(roleName, Sets.newHashSet(privilege));
+  }
+
+  public CommitContext alterSentryRoleGrantPrivileges(String roleName, Set<TSentryPrivilege> privileges)
+      throws SentryUserException {
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     roleName = trimAndLower(roleName);
     try {
       pm = openTransaction();
-      // first do grant check
-      grantOptionCheck(pm, privilege);
+      for (TSentryPrivilege privilege : privileges) {
+        // first do grant check
+        grantOptionCheck(pm, privilege);
 
-      alterSentryRoleGrantPrivilegeCore(pm, roleName, privilege);
+        alterSentryRoleGrantPrivilegeCore(pm, roleName, privilege);
+      }
       CommitContext commit = commitUpdateTransaction(pm);
       rollbackTransaction = false;
       return commit;
@@ -343,15 +350,22 @@ public class SentryStore {
 
   public CommitContext alterSentryRoleRevokePrivilege(String roleName,
       TSentryPrivilege tPrivilege) throws SentryUserException {
+    return alterSentryRoleRevokePrivileges(roleName, Sets.newHashSet(tPrivilege));
+  }
+
+  public CommitContext alterSentryRoleRevokePrivileges(String roleName,
+      Set<TSentryPrivilege> tPrivileges) throws SentryUserException {
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     roleName = safeTrimLower(roleName);
     try {
       pm = openTransaction();
-      // first do revoke check
-      grantOptionCheck(pm, tPrivilege);
+      for (TSentryPrivilege tPrivilege : tPrivileges) {
+        // first do revoke check
+        grantOptionCheck(pm, tPrivilege);
 
-      alterSentryRoleRevokePrivilegeCore(pm, roleName, tPrivilege);
+        alterSentryRoleRevokePrivilegeCore(pm, roleName, tPrivilege);
+      }
 
       CommitContext commit = commitUpdateTransaction(pm);
       rollbackTransaction = false;
