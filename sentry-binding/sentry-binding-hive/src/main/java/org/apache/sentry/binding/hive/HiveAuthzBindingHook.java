@@ -396,24 +396,7 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
       inputHierarchy.add(dbHierarchy);
       outputHierarchy.add(dbHierarchy);
 
-      for(ReadEntity readEntity:inputs) {
-        // skip the tables/view that are part of expanded view definition.
-        if (isChildTabForView(readEntity)) {
-          continue;
-        }
-        // If this is a UDF, then check whether its allowed to be executed
-         // TODO: when we support execute privileges on UDF, this can be removed.
-        if (isUDF(readEntity)) {
-          if (isBuiltinUDF(readEntity)) {
-            checkUDFWhiteList(readEntity.getUDF().getDisplayName());
-          }
-          continue;
-        }
-        List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
-        entityHierarchy.add(hiveAuthzBinding.getAuthServer());
-        entityHierarchy.addAll(getAuthzHierarchyFromEntity(readEntity));
-        inputHierarchy.add(entityHierarchy);
-      }
+      getInputHierarchyFromInputs(inputHierarchy, inputs);
       break;
     case TABLE:
       // workaround for add partitions
@@ -421,28 +404,8 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
         inputHierarchy.add(ImmutableList.of(hiveAuthzBinding.getAuthServer(), partitionURI));
       }
 
-      for (ReadEntity readEntity: inputs) {
-        // skip the tables/view that are part of expanded view definition.
-        if (isChildTabForView(readEntity)) {
-          continue;
-        }
-        // If this is a UDF, then check whether its allowed to be executed
-        // TODO: when we support execute privileges on UDF, this can be removed.
-        if (isUDF(readEntity)) {
-          if (isBuiltinUDF(readEntity)) {
-            checkUDFWhiteList(readEntity.getUDF().getDisplayName());
-          }
-          continue;
-        }
-        if (readEntity.getAccessedColumns() != null && !readEntity.getAccessedColumns().isEmpty()) {
-          addColumnHierarchy(inputHierarchy, readEntity);
-        } else {
-          List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
-          entityHierarchy.add(hiveAuthzBinding.getAuthServer());
-          entityHierarchy.addAll(getAuthzHierarchyFromEntity(readEntity));
-          inputHierarchy.add(entityHierarchy);
-        }
-      }
+      getInputHierarchyFromInputs(inputHierarchy, inputs);
+
       for (WriteEntity writeEntity: outputs) {
         if (filterWriteEntity(writeEntity)) {
           continue;
@@ -604,6 +567,39 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
       break;
     default:
       inputHierarchy.add(entityHierarchy);
+    }
+  }
+
+  /**
+   * Get Authorizable from inputs and put into inputHierarchy
+   *
+   * @param inputHierarchy
+   * @param entity
+   * @param sentryContext
+   */
+  private void getInputHierarchyFromInputs(List<List<DBModelAuthorizable>> inputHierarchy,
+      Set<ReadEntity> inputs) {
+    for (ReadEntity readEntity: inputs) {
+      // skip the tables/view that are part of expanded view definition.
+      if (isChildTabForView(readEntity)) {
+        continue;
+      }
+      // If this is a UDF, then check whether its allowed to be executed
+      // TODO: when we support execute privileges on UDF, this can be removed.
+      if (isUDF(readEntity)) {
+        if (isBuiltinUDF(readEntity)) {
+          checkUDFWhiteList(readEntity.getUDF().getDisplayName());
+        }
+        continue;
+      }
+      if (readEntity.getAccessedColumns() != null && !readEntity.getAccessedColumns().isEmpty()) {
+        addColumnHierarchy(inputHierarchy, readEntity);
+      } else {
+        List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
+        entityHierarchy.add(hiveAuthzBinding.getAuthServer());
+        entityHierarchy.addAll(getAuthzHierarchyFromEntity(readEntity));
+        inputHierarchy.add(entityHierarchy);
+      }
     }
   }
 

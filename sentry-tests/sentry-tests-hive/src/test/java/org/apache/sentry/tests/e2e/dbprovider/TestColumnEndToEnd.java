@@ -192,4 +192,56 @@ public class TestColumnEndToEnd extends AbstractTestWithStaticConfiguration {
     statement.close();
     connection.close();
   }
+
+  @Test
+  public void testCreateTableAsSelect() throws Exception {
+    Connection connection = context.createConnection(ADMIN1);
+    Statement statement = context.createStatement(connection);
+    statement.execute("CREATE database " + DB1);
+    statement.execute("use " + DB1);
+    statement.execute("CREATE TABLE t1 (c1 string, c2 string)");
+    statement.execute("CREATE ROLE user_role1");
+    statement.execute("CREATE ROLE user_role2");
+    statement.execute("CREATE ROLE user_role3");
+    statement.execute("GRANT SELECT (c1) ON TABLE t1 TO ROLE user_role1");
+    statement.execute("GRANT SELECT (c1, c2) ON TABLE t1 TO ROLE user_role2");
+    statement.execute("GRANT SELECT ON TABLE t1 TO ROLE user_role3");
+    statement.execute("GRANT CREATE ON DATABASE " + DB1 + " TO ROLE user_role1");
+    statement.execute("GRANT CREATE ON DATABASE " + DB1 + " TO ROLE user_role2");
+    statement.execute("GRANT CREATE ON DATABASE " + DB1 + " TO ROLE user_role3");
+    statement.execute("GRANT ROLE user_role1 TO GROUP " + USERGROUP1);
+    statement.execute("GRANT ROLE user_role2 TO GROUP " + USERGROUP2);
+    statement.execute("GRANT ROLE user_role3 TO GROUP " + USERGROUP3);
+    statement.close();
+    connection.close();
+
+    // 1 user_role1 create table as select
+    connection = context.createConnection(USER1_1);
+    statement = context.createStatement(connection);
+    statement.execute("use " + DB1);
+    statement.execute("CREATE TABLE t1_1 AS SELECT c1 FROM t1");
+    try {
+      statement.execute("CREATE TABLE t1_2 AS SELECT * FROM t1");
+      assertTrue("no permission on table t1!!", false);
+    } catch (Exception e) {
+      // Ignore
+    }
+
+    // 2 user_role2 create table as select
+    connection = context.createConnection(USER2_1);
+    statement = context.createStatement(connection);
+    statement.execute("use " + DB1);
+    statement.execute("CREATE TABLE t2_1 AS SELECT c1 FROM t1");
+    statement.execute("CREATE TABLE t2_2 AS SELECT * FROM t1");
+
+    // 3 user_role3 create table as select
+    connection = context.createConnection(USER3_1);
+    statement = context.createStatement(connection);
+    statement.execute("use " + DB1);
+    statement.execute("CREATE TABLE t3_1 AS SELECT c1 FROM t1");
+    statement.execute("CREATE TABLE t3_2 AS SELECT * FROM t1");
+
+    statement.close();
+    connection.close();
+  }
 }
