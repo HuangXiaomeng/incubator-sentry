@@ -45,12 +45,12 @@ struct TSentryPrivilege {
 3: required string serverName,
 4: optional string dbName = "",
 5: optional string tableName = "",
-6: optional string columnName = "",
-7: optional string URI = "",
-8: required string action = "",
-9: optional i64 createTime, # Set on server side
-10: optional string grantorPrincipal, # Set on server side
-11: optional TSentryGrantOption grantOption = TSentryGrantOption.FALSE
+6: optional string URI = "",
+7: required string action = "",
+8: optional i64 createTime, # Set on server side
+9: optional string grantorPrincipal, # Set on server side
+10: optional TSentryGrantOption grantOption = TSentryGrantOption.FALSE
+11: optional string columnName = "",
 }
 
 # TODO can this be deleted? it's not adding value to TAlterSentryRoleAddGroupsRequest
