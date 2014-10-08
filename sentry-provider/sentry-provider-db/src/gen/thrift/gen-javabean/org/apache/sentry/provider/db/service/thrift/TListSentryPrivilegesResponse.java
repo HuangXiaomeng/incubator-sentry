@@ -444,14 +444,14 @@ public class TListSentryPrivilegesResponse implements org.apache.thrift.TBase<TL
           case 2: // PRIVILEGES
             if (schemeField.type == org.apache.thrift.protocol.TType.SET) {
               {
-                org.apache.thrift.protocol.TSet _set48 = iprot.readSetBegin();
-                struct.privileges = new HashSet<TSentryPrivilege>(2*_set48.size);
-                for (int _i49 = 0; _i49 < _set48.size; ++_i49)
+                org.apache.thrift.protocol.TSet _set56 = iprot.readSetBegin();
+                struct.privileges = new HashSet<TSentryPrivilege>(2*_set56.size);
+                for (int _i57 = 0; _i57 < _set56.size; ++_i57)
                 {
-                  TSentryPrivilege _elem50; // required
-                  _elem50 = new TSentryPrivilege();
-                  _elem50.read(iprot);
-                  struct.privileges.add(_elem50);
+                  TSentryPrivilege _elem58; // required
+                  _elem58 = new TSentryPrivilege();
+                  _elem58.read(iprot);
+                  struct.privileges.add(_elem58);
                 }
                 iprot.readSetEnd();
               }
@@ -483,9 +483,9 @@ public class TListSentryPrivilegesResponse implements org.apache.thrift.TBase<TL
           oprot.writeFieldBegin(PRIVILEGES_FIELD_DESC);
           {
             oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, struct.privileges.size()));
-            for (TSentryPrivilege _iter51 : struct.privileges)
+            for (TSentryPrivilege _iter59 : struct.privileges)
             {
-              _iter51.write(oprot);
+              _iter59.write(oprot);
             }
             oprot.writeSetEnd();
           }
@@ -518,9 +518,9 @@ public class TListSentryPrivilegesResponse implements org.apache.thrift.TBase<TL
       if (struct.isSetPrivileges()) {
         {
           oprot.writeI32(struct.privileges.size());
-          for (TSentryPrivilege _iter52 : struct.privileges)
+          for (TSentryPrivilege _iter60 : struct.privileges)
           {
-            _iter52.write(oprot);
+            _iter60.write(oprot);
           }
         }
       }
@@ -535,14 +535,14 @@ public class TListSentryPrivilegesResponse implements org.apache.thrift.TBase<TL
       BitSet incoming = iprot.readBitSet(1);
       if (incoming.get(0)) {
         {
-          org.apache.thrift.protocol.TSet _set53 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.privileges = new HashSet<TSentryPrivilege>(2*_set53.size);
-          for (int _i54 = 0; _i54 < _set53.size; ++_i54)
+          org.apache.thrift.protocol.TSet _set61 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.privileges = new HashSet<TSentryPrivilege>(2*_set61.size);
+          for (int _i62 = 0; _i62 < _set61.size; ++_i62)
           {
-            TSentryPrivilege _elem55; // required
-            _elem55 = new TSentryPrivilege();
-            _elem55.read(iprot);
-            struct.privileges.add(_elem55);
+            TSentryPrivilege _elem63; // required
+            _elem63 = new TSentryPrivilege();
+            _elem63.read(iprot);
+            struct.privileges.add(_elem63);
           }
         }
         struct.setPrivilegesIsSet(true);

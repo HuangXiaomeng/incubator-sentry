@@ -618,13 +618,13 @@ public class TListSentryPrivilegesForProviderRequest implements org.apache.thrif
           case 2: // GROUPS
             if (schemeField.type == org.apache.thrift.protocol.TType.SET) {
               {
-                org.apache.thrift.protocol.TSet _set64 = iprot.readSetBegin();
-                struct.groups = new HashSet<String>(2*_set64.size);
-                for (int _i65 = 0; _i65 < _set64.size; ++_i65)
+                org.apache.thrift.protocol.TSet _set72 = iprot.readSetBegin();
+                struct.groups = new HashSet<String>(2*_set72.size);
+                for (int _i73 = 0; _i73 < _set72.size; ++_i73)
                 {
-                  String _elem66; // required
-                  _elem66 = iprot.readString();
-                  struct.groups.add(_elem66);
+                  String _elem74; // required
+                  _elem74 = iprot.readString();
+                  struct.groups.add(_elem74);
                 }
                 iprot.readSetEnd();
               }
@@ -671,9 +671,9 @@ public class TListSentryPrivilegesForProviderRequest implements org.apache.thrif
         oprot.writeFieldBegin(GROUPS_FIELD_DESC);
         {
           oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRING, struct.groups.size()));
-          for (String _iter67 : struct.groups)
+          for (String _iter75 : struct.groups)
           {
-            oprot.writeString(_iter67);
+            oprot.writeString(_iter75);
           }
           oprot.writeSetEnd();
         }
@@ -711,9 +711,9 @@ public class TListSentryPrivilegesForProviderRequest implements org.apache.thrif
       oprot.writeI32(struct.protocol_version);
       {
         oprot.writeI32(struct.groups.size());
-        for (String _iter68 : struct.groups)
+        for (String _iter76 : struct.groups)
         {
-          oprot.writeString(_iter68);
+          oprot.writeString(_iter76);
         }
       }
       struct.roleSet.write(oprot);
@@ -733,13 +733,13 @@ public class TListSentryPrivilegesForProviderRequest implements org.apache.thrif
       struct.protocol_version = iprot.readI32();
       struct.setProtocol_versionIsSet(true);
       {
-        org.apache.thrift.protocol.TSet _set69 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
-        struct.groups = new HashSet<String>(2*_set69.size);
-        for (int _i70 = 0; _i70 < _set69.size; ++_i70)
+        org.apache.thrift.protocol.TSet _set77 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
+        struct.groups = new HashSet<String>(2*_set77.size);
+        for (int _i78 = 0; _i78 < _set77.size; ++_i78)
         {
-          String _elem71; // required
-          _elem71 = iprot.readString();
-          struct.groups.add(_elem71);
+          String _elem79; // required
+          _elem79 = iprot.readString();
+          struct.groups.add(_elem79);
         }
       }
       struct.setGroupsIsSet(true);

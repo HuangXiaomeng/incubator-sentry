@@ -588,7 +588,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
               sentryClient.grantTablePrivilege(subject, princ.getName(), server, dbName,
                   tableName, toSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
             } else {
-              sentryClient.grantColumnsPrivilege(subject, princ.getName(), server, dbName,
+              sentryClient.grantColumnsPrivileges(subject, princ.getName(), server, dbName,
                   tableName, columnNames, toSentryAction(privDesc.getPrivilege().getPriv()), grantOption);
             }
           } else {

@@ -109,7 +109,7 @@ struct TAlterSentryRoleGrantPrivilegeRequest {
 }
 struct TAlterSentryRoleGrantPrivilegeResponse {
 1: required sentry_common_service.TSentryResponseStatus status
-2: optional TSentryPrivilege privilege
+2: optional set<TSentryPrivilege> privileges
 }
 
 # REVOKE ... ON ... FROM ROLE ...

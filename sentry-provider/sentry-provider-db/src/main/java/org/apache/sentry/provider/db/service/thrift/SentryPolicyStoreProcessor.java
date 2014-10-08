@@ -183,8 +183,7 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
       CommitContext commitContext = sentryStore.alterSentryRoleGrantPrivileges(request.getRequestorUserName(),
           request.getRoleName(), request.getPrivileges());
       response.setStatus(Status.OK());
-      // XXX
-      // response.setPrivilege(request.getPrivileges().iterator().next());
+      response.setPrivileges(request.getPrivileges());
       notificationHandlerInvoker.alter_sentry_role_grant_privilege(commitContext,
           request, response);
     } catch (SentryNoSuchObjectException e) {
