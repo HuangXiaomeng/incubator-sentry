@@ -538,9 +538,9 @@ public class SentryStore {
         priv.setDbName((String) privObj[2]);
         priv.setTableName((String) privObj[3]);
         priv.setColumnName((String) privObj[4]);
-        priv.setURI((String) privObj[4]);
-        priv.setAction((String) privObj[5]);
-        priv.setGrantOption((Boolean) privObj[6]);
+        priv.setURI((String) privObj[5]);
+        priv.setAction((String) privObj[6]);
+        priv.setGrantOption((Boolean) privObj[7]);
         privileges.add(priv);
       }
       rollbackTransaction = false;
