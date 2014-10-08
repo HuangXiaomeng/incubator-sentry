@@ -1504,8 +1504,10 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
     Statement statement = context.createStatement(connection);
     statement.execute("CREATE ROLE role1");
     statement.execute("GRANT SELECT (c1) ON TABLE t1 TO ROLE role1");
+    statement.execute("GRANT SELECT (c2) ON TABLE t2 TO ROLE role1");
+    statement.execute("GRANT SELECT (c1,c2) ON TABLE t3 TO ROLE role1");
 
-    //On table - positive
+    //On column - positive
     ResultSet resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t1 (c1)");
     int rowCount = 0 ;
     while ( resultSet.next()) {
@@ -1523,13 +1525,38 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
     }
     assertThat(rowCount, is(1));
-    //On table - negative
+       resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t2 (c2)");
+    rowCount = 0 ;
+    while (resultSet.next()) {
+      rowCount++;
+    }
+    assertThat(rowCount, is(0));
+       resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t3 (c1)");
+    rowCount = 0 ;
+    while (resultSet.next()) {
+      rowCount++;
+    }
+    assertThat(rowCount, is(0));
+       resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t3 (c2)");
+    rowCount = 0 ;
+    while (resultSet.next()) {
+      rowCount++;
+    }
+    assertThat(rowCount, is(0));
+    //On column - negative
     resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t1 (c2)");
     rowCount = 0 ;
     while (resultSet.next()) {
       rowCount++;
     }
     assertThat(rowCount, is(0));
+       resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t2 (c1)");
+    rowCount = 0 ;
+    while (resultSet.next()) {
+      rowCount++;
+    }
+    assertThat(rowCount, is(0));
+
     statement.close();
     connection.close();
   }
@@ -1545,7 +1572,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
     statement.execute("CREATE ROLE role1");
     statement.execute("GRANT SELECT ON TABLE t1 TO ROLE role1");
 
-    //On table - positive
+    //On column - positive
     ResultSet resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t1");
     int rowCount = 0 ;
     while ( resultSet.next()) {

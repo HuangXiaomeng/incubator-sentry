@@ -17,6 +17,7 @@
 
 package org.apache.hadoop.hive.ql.exec;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.hive.ql.plan.PrivilegeObjectDesc;
@@ -24,7 +25,7 @@ import org.apache.hadoop.hive.ql.plan.PrivilegeObjectDesc;
 public class SentryHivePrivilegeObjectDesc extends PrivilegeObjectDesc {
   private boolean isUri;
   private boolean isServer;
-  private List<String> columns;
+  private List<String> columns = new ArrayList<String>();
 
   public SentryHivePrivilegeObjectDesc() {
     // reset table type which is on by default
