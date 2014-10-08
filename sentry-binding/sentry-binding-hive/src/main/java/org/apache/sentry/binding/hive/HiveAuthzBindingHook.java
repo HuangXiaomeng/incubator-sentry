@@ -152,7 +152,6 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
         break;
       case HiveParser.TOK_DROPTABLE:
       case HiveParser.TOK_DROPVIEW:
-      case HiveParser.TOK_SHOW_TABLESTATUS:
       case HiveParser.TOK_SHOW_CREATETABLE:
       case HiveParser.TOK_ALTERTABLE_SERIALIZER:
       case HiveParser.TOK_ALTERVIEW_ADDPARTS:
@@ -167,6 +166,21 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
       case HiveParser.TOK_ALTERINDEX_REBUILD:
         currTab = extractTable((ASTNode)ast.getChild(0)); //type is not TOK_TABNAME
         currDB = extractDatabase((ASTNode) ast.getChild(0));
+        break;
+      case HiveParser.TOK_SHOW_TABLESTATUS:
+        currDB = extractDatabase((ASTNode)ast.getChild(0));
+        int children = ast.getChildCount();
+        for (int i = 1; i < children; i++) {
+          ASTNode child = (ASTNode) ast.getChild(i);
+          if (child.getToken().getType() == HiveParser.Identifier) {
+            currDB = new Database(child.getText());
+            break;
+          }
+        }
+        //loosing the requested privileges for possible wildcard tables, since
+        //further authorization will be done at the filter step and those unwanted will
+        //eventually be filtered out from the output
+        currTab = Table.ALL;
         break;
       case HiveParser.TOK_ALTERTABLE_RENAME:
       case HiveParser.TOK_ALTERTABLE_PROPERTIES:
@@ -318,7 +332,9 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
         permsRequired += perm + ";";
       }
       SessionState.get().getConf().set(HiveAuthzConf.HIVE_SENTRY_AUTH_ERRORS, permsRequired);
-      throw new SemanticException(HiveAuthzConf.HIVE_SENTRY_PRIVILEGE_ERROR_MESSAGE, e);
+      String msg = HiveAuthzConf.HIVE_SENTRY_PRIVILEGE_ERROR_MESSAGE + "\n Required privileges for this query: "
+          + permsRequired;
+      throw new SemanticException(msg, e);
     }
     if ("true".equalsIgnoreCase(context.getConf().
         get(HiveAuthzConf.HIVE_SENTRY_MOCK_COMPILATION))) {
@@ -458,6 +474,12 @@ public class HiveAuthzBindingHook extends AbstractSemanticAnalyzerHook {
         udfUriHierarchy.add(hiveAuthzBinding.getAuthServer());
         udfUriHierarchy.add(udfURI);
         inputHierarchy.add(udfUriHierarchy);
+        for (WriteEntity writeEntity : outputs) {
+          List<DBModelAuthorizable> entityHierarchy = new ArrayList<DBModelAuthorizable>();
+          entityHierarchy.add(hiveAuthzBinding.getAuthServer());
+          entityHierarchy.addAll(getAuthzHierarchyFromEntity(writeEntity));
+          outputHierarchy.add(entityHierarchy);
+        }
       }
 
       outputHierarchy.add(connectHierarchy);

@@ -15,16 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.sentry.provider.db;
 
-import org.apache.sentry.SentryUserException;
+package org.apache.sentry.provider.db.service.thrift;
 
-public class SentryInvalidInputException extends SentryUserException {
-  private static final long serialVersionUID = 2962080655835L;
-  public SentryInvalidInputException(String msg) {
-    super(msg);
+import org.apache.hadoop.minikdc.MiniKdc;
+import org.junit.Test;
+
+public class TestConnectionWithTicketTimeout extends
+    org.apache.sentry.service.thrift.SentryServiceIntegrationBase {
+
+
+  @Override
+  public void beforeSetup() throws Exception {
+    kdcConfOverlay.setProperty(MiniKdc.MAX_TICKET_LIFETIME, "300001");
   }
-  public SentryInvalidInputException(String msg, String reason) {
-    super(msg, reason);
+
+  /***
+   * Test is run only when sentry.hive.test.ticket.timeout is set to "true"
+   * @throws Exception
+   */
+  @Test
+  public void testConnectionAfterTicketTimeout() throws Exception {
+    if ("true".equalsIgnoreCase(System.getProperty("sentry.hive.test.ticket.timeout", "false"))) {
+      Thread.sleep(400000);
+      connectToSentryService();
+    }
   }
+
 }

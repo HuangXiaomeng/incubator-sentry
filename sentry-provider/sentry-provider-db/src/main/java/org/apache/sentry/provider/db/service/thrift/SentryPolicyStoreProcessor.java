@@ -22,6 +22,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
@@ -50,6 +51,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 @SuppressWarnings("unused")
@@ -150,8 +152,7 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
     try {
       authorize(request.getRequestorUserName(),
           getRequestorGroups(request.getRequestorUserName()));
-      CommitContext commitContext = sentryStore.createSentryRole(request.getRoleName(),
-          request.getRequestorUserName());
+      CommitContext commitContext = sentryStore.createSentryRole(request.getRoleName());
       response.setStatus(Status.OK());
       notificationHandlerInvoker.create_sentry_role(commitContext,
           request, response);
@@ -179,9 +180,11 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
 
     TAlterSentryRoleGrantPrivilegeResponse response = new TAlterSentryRoleGrantPrivilegeResponse();
     try {
-      CommitContext commitContext = sentryStore.alterSentryRoleGrantPrivileges(request.getRoleName(),
-                                    request.getPrivileges());
+      CommitContext commitContext = sentryStore.alterSentryRoleGrantPrivileges(request.getRequestorUserName(),
+          request.getRoleName(), request.getPrivileges());
       response.setStatus(Status.OK());
+      // XXX
+      // response.setPrivilege(request.getPrivileges().iterator().next());
       notificationHandlerInvoker.alter_sentry_role_grant_privilege(commitContext,
           request, response);
     } catch (SentryNoSuchObjectException e) {
@@ -214,8 +217,8 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
   (TAlterSentryRoleRevokePrivilegeRequest request) throws TException {
     TAlterSentryRoleRevokePrivilegeResponse response = new TAlterSentryRoleRevokePrivilegeResponse();
     try {
-      CommitContext commitContext = sentryStore.alterSentryRoleRevokePrivileges(request.getRoleName(),
-                                    request.getPrivileges());
+      CommitContext commitContext = sentryStore.alterSentryRoleRevokePrivileges(request.getRequestorUserName(),
+          request.getRoleName(), request.getPrivileges());
       response.setStatus(Status.OK());
       notificationHandlerInvoker.alter_sentry_role_revoke_privilege(commitContext,
           request, response);
@@ -356,17 +359,23 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
     TListSentryRolesResponse response = new TListSentryRolesResponse();
     TSentryResponseStatus status;
     Set<TSentryRole> roleSet = new HashSet<TSentryRole>();
-    Set<String> groups = new HashSet<String>();
+    String subject = request.getRequestorUserName();
     boolean checkAllGroups = false;
     try {
+      Set<String> groups = getRequestorGroups(subject);
       // Don't check admin permissions for listing requestor's own roles
       if (AccessConstants.ALL.equalsIgnoreCase(request.getGroupName())) {
-        groups = getRequestorGroups(request.getRequestorUserName());
         checkAllGroups = true;
       } else {
-        authorize(request.getRequestorUserName(),
-          getRequestorGroups(request.getRequestorUserName()));
-        groups.add(request.getGroupName());
+        boolean admin = inAdminGroups(groups);
+        //Only admin users can list all roles in the system ( groupname = null)
+        //Non admin users are only allowed to list only groups which they belong to
+        if(!admin && (request.getGroupName() == null || !groups.contains(request.getGroupName()))) {
+          throw new SentryAccessDeniedException("Access denied to " + subject);
+        }else {
+          groups.clear();
+          groups.add(request.getGroupName());
+        }
       }
       roleSet = sentryStore.getTSentryRolesByGroupName(groups, checkAllGroups);
       response.setRoles(roleSet);
@@ -529,7 +538,64 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
     try {
       authorize(request.getRequestorUserName(), adminGroups);
       sentryStore.renamePrivilege(request.getOldAuthorizable(),
-          request.getNewAuthorizable(), request.getRequestorUserName());
+          request.getNewAuthorizable());
+      response.setStatus(Status.OK());
+    } catch (SentryAccessDeniedException e) {
+      LOGGER.error(e.getMessage(), e);
+      response.setStatus(Status.AccessDenied(e.getMessage(), e));
+    } catch (Exception e) {
+      String msg = "Unknown error for request: " + request + ", message: "
+          + e.getMessage();
+      LOGGER.error(msg, e);
+      response.setStatus(Status.RuntimeError(msg, e));
+    }
+    return response;
+  }
+
+  @Override
+  public TListSentryPrivilegesByAuthResponse list_sentry_privileges_by_authorizable(
+      TListSentryPrivilegesByAuthRequest request) throws TException {
+    TListSentryPrivilegesByAuthResponse response = new TListSentryPrivilegesByAuthResponse();
+    Map<TSentryAuthorizable, TSentryPrivilegeMap> authRoleMap = Maps.newHashMap();
+    String subject = request.getRequestorUserName();
+    Set<String> requestedGroups = request.getGroups();
+    TSentryActiveRoleSet requestedRoleSet = request.getRoleSet();
+    try {
+      Set<String> memberGroups = getRequestorGroups(subject);
+      if(!inAdminGroups(memberGroups)) {
+        // disallow non-admin to lookup groups that they are not part of
+        if (requestedGroups != null && !requestedGroups.isEmpty()) {
+          for (String requestedGroup : requestedGroups) {
+            if (!memberGroups.contains(requestedGroup)) {
+              // if user doesn't belong to one of the requested group then raise error
+              throw new SentryAccessDeniedException("Access denied to " + subject);
+            }
+          }
+        } else {
+          // non-admin's search is limited to it's own groups
+          requestedGroups = memberGroups;
+        }
+
+        // disallow non-admin to lookup roles that they are not part of
+        if (requestedRoleSet != null && !requestedRoleSet.isAll()) {
+          Set<String> roles = toTrimedLower(sentryStore
+              .getRoleNamesForGroups(memberGroups));
+          for (String role : toTrimedLower(requestedRoleSet.getRoles())) {
+            if (!roles.contains(role)) {
+              throw new SentryAccessDeniedException("Access denied to "
+                  + subject);
+            }
+          }
+        }
+      }
+
+      // If user is not part of any group.. return empty response
+      for (TSentryAuthorizable authorizable : request.getAuthorizableSet()) {
+        authRoleMap.put(authorizable, sentryStore
+            .listSentryPrivilegesByAuthorizable(requestedGroups,
+                request.getRoleSet(), authorizable, inAdminGroups(memberGroups)));
+      }
+      response.setPrivilegesMapByAuth(authRoleMap);
       response.setStatus(Status.OK());
     } catch (SentryAccessDeniedException e) {
       LOGGER.error(e.getMessage(), e);

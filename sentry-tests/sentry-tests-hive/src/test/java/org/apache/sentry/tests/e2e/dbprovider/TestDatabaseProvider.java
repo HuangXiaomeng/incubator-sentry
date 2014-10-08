@@ -19,6 +19,7 @@ package org.apache.sentry.tests.e2e.dbprovider;
 
 import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -984,7 +985,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
 
     statement.execute("REVOKE ALL ON SERVER server1 from role role1");
@@ -1006,7 +1007,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
 
     statement.execute("REVOKE ALL ON DATABASE default from role role1");
@@ -1028,7 +1029,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
     statement.execute("REVOKE ALL ON URI 'file:///path' from role role1");
     resultSet = statement.executeQuery("SHOW GRANT ROLE role1");
@@ -1049,7 +1050,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
 
     statement.execute("REVOKE ALL ON TABLE tab1 from role role1");
@@ -1071,7 +1072,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
 
     statement.execute("REVOKE INSERT ON TABLE tab1 from role role1");
@@ -1093,7 +1094,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
 
     statement.execute("REVOKE SELECT ON TABLE tab1 from role role1");
@@ -1118,7 +1119,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
 
     //Revoke Partial privilege on table by admin
@@ -1139,7 +1140,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
 
     }
     statement.close();
@@ -1362,8 +1363,61 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(2), is(new Boolean("False")));
       //Create time is not tested
       //assertThat(resultSet.getLong(3), is(new Long(0)));
-      assertThat(resultSet.getString(4), equalToIgnoringCase(ADMIN1));
+      assertThat(resultSet.getString(4), equalToIgnoringCase("--"));
     }
+    statement.close();
+    connection.close();
+  }
+
+  /**
+   * SHOW ROLE GRANT GROUP groupName
+   * @throws Exception
+   4.1. Show role grant works for non-admin users when the user belongs to the requested group
+   4.2. Show role grant FAILS for non-admin users when the user doesn't belongs to the requested group
+   */
+  @Test
+  public void testShowRolesByGroupNonAdmin() throws Exception {
+    Connection connection = context.createConnection(ADMIN1);
+    Statement statement = context.createStatement(connection);
+    //This is non deterministic as we are now using same sentry service across the tests
+    // and orphan groups are not cleaned up.
+    //context.assertSentryException(statement,"SHOW ROLE GRANT GROUP " + ADMINGROUP,
+    //    SentryNoSuchObjectException.class.getSimpleName());
+    statement.execute("CREATE ROLE role1");
+    statement.execute("CREATE ROLE role2");
+    statement.execute("GRANT ROLE role1 to GROUP " + USERGROUP1);
+    statement.execute("GRANT ROLE role2 to GROUP " + USERGROUP2);
+    statement.execute("GRANT ROLE role1 to GROUP " + ADMINGROUP);
+    statement.execute("GRANT ROLE role2 to GROUP " + ADMINGROUP);
+    statement.close();
+    connection.close();
+
+    connection = context.createConnection(USER1_1);
+    statement = context.createStatement(connection);
+    // show role ADMINGROUP should fail for user1
+    context.assertSentryException(statement, "SHOW ROLE GRANT GROUP " + ADMINGROUP, SentryAccessDeniedException.class.getSimpleName());
+    ResultSet resultSet = statement.executeQuery("SHOW ROLE GRANT GROUP " + USERGROUP1);
+    assertTrue(resultSet.next());
+    assertThat(resultSet.getString(1), equalToIgnoringCase("role1"));
+    assertFalse(resultSet.next());
+    statement.close();
+    connection.close();
+
+    connection = context.createConnection(USER2_1);
+    statement = context.createStatement(connection);
+    // show role group1 should fail for user2
+    context.assertSentryException(statement, "SHOW ROLE GRANT GROUP " + USERGROUP1, SentryAccessDeniedException.class.getSimpleName());
+    resultSet = statement.executeQuery("SHOW ROLE GRANT GROUP " + USERGROUP2);
+    assertTrue(resultSet.next());
+    assertThat(resultSet.getString(1), equalToIgnoringCase("role2"));
+    assertFalse(resultSet.next());
+    statement.close();
+    connection.close();
+
+    connection = context.createConnection(USER3_1);
+    statement = context.createStatement(connection);
+    // show role group1 should fail for user3
+    context.assertSentryException(statement, "SHOW ROLE GRANT GROUP " + USERGROUP1, SentryAccessDeniedException.class.getSimpleName());
     statement.close();
     connection.close();
   }
@@ -1425,7 +1479,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
         assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
         //Create time is not tested
         //assertThat(resultSet.getLong(9), is(new Long(0)));
-        assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+        assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
       }
       statement.close();
       connection.close();
@@ -1506,7 +1560,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
     assertThat(rowCount, is(1));
     //On table - negative
@@ -1546,7 +1600,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
 
     //On Database - positive
@@ -1562,7 +1616,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
 
     //On Database - negative
@@ -1600,7 +1654,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
 
     //On Database - postive
@@ -1616,7 +1670,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
 
     statement.close();
@@ -1648,7 +1702,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
     statement.close();
     connection.close();
@@ -1782,7 +1836,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
     statement.close();
     connection.close();

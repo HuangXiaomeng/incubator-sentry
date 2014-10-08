@@ -108,6 +108,7 @@ public class HiveAuthzConf extends Configuration {
     "date,decimal,timestamp," + // SENTRY-312
     "abs,acos,and,array,array_contains,ascii,asin,assert_true,atan,avg," +
     "between,bin,case,cast,ceil,ceiling,coalesce,collect_set,compute_stats,concat,concat_ws," +
+    "UDFConv,UDFHex,UDFSign,UDFToBoolean,UDFToByte,UDFToDouble,UDFToFloat,UDFToInteger,UDFToLong,UDFToShort,UDFToString," +
     "context_ngrams,conv,corr,cos,count,covar_pop,covar_samp,create_union,date_add,date_sub," +
     "datediff,day,dayofmonth,degrees,div,e,elt,ewah_bitmap,ewah_bitmap_and,ewah_bitmap_empty," +
     "ewah_bitmap_or,exp,explode,field,find_in_set,floor,format_number,from_unixtime," +
@@ -124,6 +125,7 @@ public class HiveAuthzConf extends Configuration {
     "variance,weekofyear,when,xpath,xpath_boolean,xpath_double,xpath_float,xpath_int,xpath_long," +
     "xpath_number,xpath_short,xpath_string,year,base64,cume_dist, decode, dense_rank, first_value," +
     "lag, last_value, lead, noop, noopwithmap, ntile, nvl, percent_rank, rank, to_unix_timestamp," +
+    "current_database, char, varchar, matchpath, row_number" +
     "unbase64,windowingtablefunction";
 
   // map of current property names - > deprecated property names.

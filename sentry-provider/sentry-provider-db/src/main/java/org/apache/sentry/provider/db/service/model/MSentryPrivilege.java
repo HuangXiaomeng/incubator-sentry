@@ -24,6 +24,7 @@ import java.util.Set;
 import javax.jdo.annotations.PersistenceCapable;
 
 import org.apache.sentry.core.common.utils.PathUtils;
+import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.provider.db.service.persistent.SentryStore;
 
 /**
@@ -47,7 +48,6 @@ public class MSentryPrivilege {
   // roles this privilege is a part of
   private Set<MSentryRole> roles;
   private long createTime;
-  private String grantorPrincipal;
 
   public MSentryPrivilege() {
     this.roles = new HashSet<MSentryRole>();
@@ -145,14 +145,6 @@ public class MSentryPrivilege {
     this.createTime = createTime;
   }
 
-  public String getGrantorPrincipal() {
-    return grantorPrincipal;
-  }
-
-  public void setGrantorPrincipal(String grantorPrincipal) {
-    this.grantorPrincipal = grantorPrincipal;
-  }
-
   public String getPrivilegeScope() {
     return privilegeScope;
   }
@@ -188,8 +180,7 @@ public class MSentryPrivilege {
         + ", serverName=" + serverName + ", dbName=" + dbName
         + ", tableName=" + tableName + ", columnName=" + columnName
         + ", URI=" + URI + ", action=" + action + ", roles=[...]"
-        + ", createTime=" + createTime + ", grantorPrincipal="
-        + grantorPrincipal + ", grantOption=" + grantOption +"]";
+        + ", createTime=" + createTime + ", grantOption=" + grantOption +"]";
   }
 
   @Override
@@ -303,8 +294,9 @@ public class MSentryPrivilege {
     }
 
     // check action implies
-    if (!action.equalsIgnoreCase("*") &&
-        !action.equalsIgnoreCase(other.action)) {
+    if (!action.equalsIgnoreCase(AccessConstants.ALL)
+        && !action.equalsIgnoreCase(other.action)
+        && !action.equalsIgnoreCase(AccessConstants.ACTION_ALL)) {
       return false;
     }
 

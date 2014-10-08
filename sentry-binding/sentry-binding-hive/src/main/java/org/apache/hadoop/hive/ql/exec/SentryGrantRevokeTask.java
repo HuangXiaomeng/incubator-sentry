@@ -73,6 +73,7 @@ import org.apache.sentry.core.model.db.Server;
 import org.apache.sentry.core.model.db.Table;
 import org.apache.sentry.provider.db.SentryAccessDeniedException;
 import org.apache.sentry.provider.db.service.thrift.SentryPolicyServiceClient;
+import org.apache.sentry.provider.db.service.thrift.TSentryGrantOption;
 import org.apache.sentry.provider.db.service.thrift.TSentryPrivilege;
 import org.apache.sentry.provider.db.service.thrift.TSentryRole;
 import org.apache.sentry.service.thrift.SentryServiceClientFactory;
@@ -131,7 +132,6 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
         this.sentryClient = sentryClientFactory.create(authzConf);
       } catch (Exception e) {
         String msg = "Error creating Sentry client: " + e.getMessage();
-        LOG.error(msg, e);
         throw new RuntimeException(msg, e);
       }
       Preconditions.checkNotNull(hiveAuthzBinding, "HiveAuthzBinding cannot be null");
@@ -174,10 +174,16 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
         HiveAuthzBindingHook.runFailureHook(hookContext, csHooks);
         throw e; // rethrow the exception for logging
       }
-    } catch(Throwable throwable) {
-      setException(throwable);
-      String msg = "Error processing Sentry command: " + throwable.getMessage();
-      LOG.error(msg, throwable);
+    } catch(SentryUserException e) {
+      setException(new Exception(e.getClass().getSimpleName() + ": " + e.getReason(), e));
+      String msg = "Error processing Sentry command: " + e.getMessage();
+      LOG.error(msg, e);
+      console.printError(msg);
+      return RETURN_CODE_FAILURE;
+    } catch(Throwable e) {
+      setException(e);
+      String msg = "Error processing Sentry command: " + e.getMessage();
+      LOG.error(msg, e);
       console.printError(msg);
       return RETURN_CODE_FAILURE;
     } finally {
@@ -450,9 +456,10 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
       appendNonNull(builder, roleName);//getPrincipalName()
       appendNonNull(builder, "ROLE");//getPrincipalType()
       appendNonNull(builder, privilege.getAction());
-      appendNonNull(builder, privilege.getGrantOption());//isGrantOption()
+      appendNonNull(builder,
+          TSentryGrantOption.TRUE.equals(privilege.getGrantOption()));
       appendNonNull(builder, privilege.getCreateTime() * 1000L);
-      appendNonNull(builder, privilege.getGrantorPrincipal());
+      appendNonNull(builder, "--");
     }
     LOG.info("builder.toString(): " + builder.toString());
     return builder.toString();
@@ -467,7 +474,7 @@ public class SentryGrantRevokeTask extends Task<DDLWork> implements Serializable
       appendNonNull(builder, roleGrant.getRoleName(), true);
       appendNonNull(builder, false);//isGrantOption()
       appendNonNull(builder, null);//roleGrant.getGrantTime() * 1000L
-      appendNonNull(builder, roleGrant.getGrantorPrincipal());
+      appendNonNull(builder, "--");
     }
     return builder.toString();
   }
