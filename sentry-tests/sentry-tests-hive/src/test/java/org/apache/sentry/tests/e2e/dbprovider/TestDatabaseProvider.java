@@ -1506,6 +1506,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
     statement.execute("GRANT SELECT (c1) ON TABLE t1 TO ROLE role1");
     statement.execute("GRANT SELECT (c2) ON TABLE t2 TO ROLE role1");
     statement.execute("GRANT SELECT (c1,c2) ON TABLE t3 TO ROLE role1");
+    statement.execute("GRANT SELECT (c1,c2) ON TABLE t4 TO ROLE role1 with grant option");
 
     //On column - positive
     ResultSet resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t1 (c1)");
@@ -1522,27 +1523,94 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
       assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
       //Create time is not tested
       //assertThat(resultSet.getLong(9), is(new Long(0)));
-      assertThat(resultSet.getString(10), equalToIgnoringCase(ADMIN1));//grantor
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
     assertThat(rowCount, is(1));
-       resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t2 (c2)");
+    resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t2 (c2)");
     rowCount = 0 ;
     while (resultSet.next()) {
       rowCount++;
+      assertThat(resultSet.getString(1), equalToIgnoringCase("default"));
+      assertThat(resultSet.getString(2), equalToIgnoringCase("t2"));
+      assertThat(resultSet.getString(3), equalToIgnoringCase(""));//partition
+      assertThat(resultSet.getString(4), equalToIgnoringCase("c2"));//column
+      assertThat(resultSet.getString(5), equalToIgnoringCase("role1"));//principalName
+      assertThat(resultSet.getString(6), equalToIgnoringCase("role"));//principalType
+      assertThat(resultSet.getString(7), equalToIgnoringCase("select"));
+      assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
+      //Create time is not tested
+      //assertThat(resultSet.getLong(9), is(new Long(0)));
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
-    assertThat(rowCount, is(0));
-       resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t3 (c1)");
+    assertThat(rowCount, is(1));
+    resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t3 (c1)");
     rowCount = 0 ;
     while (resultSet.next()) {
       rowCount++;
+      assertThat(resultSet.getString(1), equalToIgnoringCase("default"));
+      assertThat(resultSet.getString(2), equalToIgnoringCase("t3"));
+      assertThat(resultSet.getString(3), equalToIgnoringCase(""));//partition
+      assertThat(resultSet.getString(4), equalToIgnoringCase("c1"));//column
+      assertThat(resultSet.getString(5), equalToIgnoringCase("role1"));//principalName
+      assertThat(resultSet.getString(6), equalToIgnoringCase("role"));//principalType
+      assertThat(resultSet.getString(7), equalToIgnoringCase("select"));
+      assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
+      //Create time is not tested
+      //assertThat(resultSet.getLong(9), is(new Long(0)));
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
-    assertThat(rowCount, is(0));
-       resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t3 (c2)");
+    assertThat(rowCount, is(1));
+    resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t3 (c2)");
     rowCount = 0 ;
     while (resultSet.next()) {
       rowCount++;
+      assertThat(resultSet.getString(1), equalToIgnoringCase("default"));
+      assertThat(resultSet.getString(2), equalToIgnoringCase("t3"));
+      assertThat(resultSet.getString(3), equalToIgnoringCase(""));//partition
+      assertThat(resultSet.getString(4), equalToIgnoringCase("c2"));//column
+      assertThat(resultSet.getString(5), equalToIgnoringCase("role1"));//principalName
+      assertThat(resultSet.getString(6), equalToIgnoringCase("role"));//principalType
+      assertThat(resultSet.getString(7), equalToIgnoringCase("select"));
+      assertThat(resultSet.getBoolean(8), is(new Boolean("False")));//grantOption
+      //Create time is not tested
+      //assertThat(resultSet.getLong(9), is(new Long(0)));
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
     }
-    assertThat(rowCount, is(0));
+    assertThat(rowCount, is(1));
+    resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t4 (c1)");
+    rowCount = 0 ;
+    while (resultSet.next()) {
+      rowCount++;
+      assertThat(resultSet.getString(1), equalToIgnoringCase("default"));
+      assertThat(resultSet.getString(2), equalToIgnoringCase("t4"));
+      assertThat(resultSet.getString(3), equalToIgnoringCase(""));//partition
+      assertThat(resultSet.getString(4), equalToIgnoringCase("c1"));//column
+      assertThat(resultSet.getString(5), equalToIgnoringCase("role1"));//principalName
+      assertThat(resultSet.getString(6), equalToIgnoringCase("role"));//principalType
+      assertThat(resultSet.getString(7), equalToIgnoringCase("select"));
+      assertThat(resultSet.getBoolean(8), is(new Boolean("True")));//grantOption
+      //Create time is not tested
+      //assertThat(resultSet.getLong(9), is(new Long(0)));
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
+    }
+    assertThat(rowCount, is(1));
+    resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t4 (c2)");
+    rowCount = 0 ;
+    while (resultSet.next()) {
+      rowCount++;
+      assertThat(resultSet.getString(1), equalToIgnoringCase("default"));
+      assertThat(resultSet.getString(2), equalToIgnoringCase("t4"));
+      assertThat(resultSet.getString(3), equalToIgnoringCase(""));//partition
+      assertThat(resultSet.getString(4), equalToIgnoringCase("c2"));//column
+      assertThat(resultSet.getString(5), equalToIgnoringCase("role1"));//principalName
+      assertThat(resultSet.getString(6), equalToIgnoringCase("role"));//principalType
+      assertThat(resultSet.getString(7), equalToIgnoringCase("select"));
+      assertThat(resultSet.getBoolean(8), is(new Boolean("True")));//grantOption
+      //Create time is not tested
+      //assertThat(resultSet.getLong(9), is(new Long(0)));
+      assertThat(resultSet.getString(10), equalToIgnoringCase("--"));//grantor
+    }
+    assertThat(rowCount, is(1));
     //On column - negative
     resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t1 (c2)");
     rowCount = 0 ;
