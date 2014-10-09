@@ -415,8 +415,12 @@ public class SentryPolicyServiceClient {
     try {
       TAlterSentryRoleGrantPrivilegeResponse response = client.alter_sentry_role_grant_privilege(request);
       Status.throwIfNotOk(response.getStatus());
-      // XXX sundp
-      return response.getPrivileges().iterator().next();
+      if (response.isSetPrivileges()
+          && response.getPrivilegesSize()>0 ) {
+        return response.getPrivileges().iterator().next();
+      } else {
+        return new TSentryPrivilege();
+      }
     } catch (TException e) {
       throw new SentryUserException(THRIFT_EXCEPTION_MESSAGE, e);
     }

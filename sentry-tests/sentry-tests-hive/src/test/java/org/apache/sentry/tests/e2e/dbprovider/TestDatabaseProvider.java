@@ -1640,7 +1640,7 @@ public class TestDatabaseProvider extends AbstractTestWithStaticConfiguration {
     statement.execute("CREATE ROLE role1");
     statement.execute("GRANT SELECT ON TABLE t1 TO ROLE role1");
 
-    //On column - positive
+    //On table - positive
     ResultSet resultSet = statement.executeQuery("SHOW GRANT ROLE role1 ON TABLE t1");
     int rowCount = 0 ;
     while ( resultSet.next()) {
