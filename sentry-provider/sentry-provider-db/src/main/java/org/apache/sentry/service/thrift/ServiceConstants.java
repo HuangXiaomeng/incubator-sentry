@@ -106,6 +106,16 @@ public class ServiceConstants {
     public static final String SENTRY_STORE_LOCAL_GROUP_MAPPING = "org.apache.sentry.provider.file.LocalGroupMappingService";
     public static final String SENTRY_STORE_GROUP_MAPPING_DEFAULT = SENTRY_STORE_HADOOP_GROUP_MAPPING;
 
+    public static final String SENTRY_HA_ENABLED = "sentry.ha.enabled";
+    public static final boolean SENTRY_HA_ENABLED_DEFAULT = false;
+    public static final String SENTRY_HA_ZK_PROPERTY_PREFIX = "sentry.ha.zookeeper.";
+    public static final String SENTRY_HA_ZOOKEEPER_QUORUM = SENTRY_HA_ZK_PROPERTY_PREFIX + "quorum";
+    public static final String SENTRY_HA_ZOOKEEPER_QUORUM_DEFAULT = "localhost:2181";
+    public static final String SENTRY_HA_ZOOKEEPER_SESSION_TIMEOUT = SENTRY_HA_ZK_PROPERTY_PREFIX + "session.timeout";
+    public static final int SENTRY_HA_ZOOKEEPER_SESSION_TIMEOUT_DEFAULT = 600*600;
+    public static final String SENTRY_HA_ZOOKEEPER_NAMESPACE = SENTRY_HA_ZK_PROPERTY_PREFIX + "namespace";
+    public static final String SENTRY_HA_ZOOKEEPER_NAMESPACE_DEFAULT = "/sentry";
+
     public static final ImmutableMap<String, String> SENTRY_STORE_DEFAULTS =
         ImmutableMap.<String, String>builder()
     .put("datanucleus.connectionPoolingType", "BoneCP")
@@ -147,6 +157,14 @@ public class ServiceConstants {
     public static final String SERVER_RPC_ADDRESS = "sentry.service.client.server.rpc-address";
     public static final String SERVER_RPC_CONN_TIMEOUT = "sentry.service.client.server.rpc-connection-timeout";
     public static final int SERVER_RPC_CONN_TIMEOUT_DEFAULT = 200000;
+
+    // HA configuration
+    public static final String SERVER_HA_ENABLED = "sentry.ha.enabled";
+    public static final boolean SERVER_HA_ENABLED_DEFAULT = ServerConfig.SENTRY_HA_ENABLED_DEFAULT;
+    public static final String SENTRY_HA_ZOOKEEPER_QUORUM = ServerConfig.SENTRY_HA_ZOOKEEPER_QUORUM;
+    public static final String SERVER_HA_ZOOKEEPER_QUORUM_DEFAULT = ServerConfig.SENTRY_HA_ZOOKEEPER_QUORUM_DEFAULT;
+    public static final String SENTRY_HA_ZOOKEEPER_NAMESPACE = ServerConfig.SENTRY_HA_ZOOKEEPER_NAMESPACE;
+    public static final String SERVER_HA_ZOOKEEPER_NAMESPACE_DEFAULT = ServerConfig.SENTRY_HA_ZOOKEEPER_NAMESPACE_DEFAULT;
   }
 
   /**
