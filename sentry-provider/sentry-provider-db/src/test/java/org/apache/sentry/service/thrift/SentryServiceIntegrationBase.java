@@ -145,7 +145,6 @@ public abstract class SentryServiceIntegrationBase extends SentryMiniKdcTestcase
   public void connectToSentryService() throws Exception {
     // The client should already be logged in when running in hive/impala/solr
     // therefore we must manually login in the integration tests
-    final SentryServiceClientFactory factory = new SentryServiceClientFactory();
     if (kerberos) {
       conf.set(ServerConfig.SECURITY_USE_UGI_TRANSPORT, "false");
       clientSubject = new Subject(false, Sets.newHashSet(
@@ -158,11 +157,11 @@ public abstract class SentryServiceIntegrationBase extends SentryMiniKdcTestcase
       client = Subject.doAs(clientSubject, new PrivilegedExceptionAction<SentryPolicyServiceClient>() {
         @Override
         public SentryPolicyServiceClient run() throws Exception {
-          return factory.create(conf);
+          return SentryServiceClientFactory.create(conf);
         }
       });
     } else {
-      client = factory.create(conf);
+      client = SentryServiceClientFactory.create(conf);
     }
   }
 
