@@ -17,7 +17,11 @@
  */
 
 package org.apache.sentry.service.thrift;
+
+import java.lang.reflect.Proxy;
+
 import org.apache.hadoop.conf.Configuration;
+
 import org.apache.sentry.provider.db.service.thrift.SentryPolicyServiceClient;
 import org.apache.sentry.provider.db.service.thrift.SentryPolicyServiceClientDefaultImpl;
 import org.apache.sentry.service.thrift.ServiceConstants.ServerConfig;
@@ -28,8 +32,15 @@ public class SentryServiceClientFactory {
   }
 
   public static SentryPolicyServiceClient create(Configuration conf) throws Exception {
-    SentryPolicyServiceClient client = new SentryPolicyServiceClientDefaultImpl(conf);
-    return client;
+    boolean haEnabled = conf.getBoolean(ServerConfig.SENTRY_HA_ENABLED, false);
+    if (haEnabled) {
+      return (SentryPolicyServiceClient) Proxy
+          .newProxyInstance(SentryPolicyServiceClientDefaultImpl.class.getClassLoader(),
+              SentryPolicyServiceClientDefaultImpl.class.getInterfaces(),
+              new HAClientInvocationHandler(conf));
+    } else {
+      return new SentryPolicyServiceClientDefaultImpl(conf);
+    }
   }
 
 }
