@@ -105,11 +105,13 @@ struct TAlterSentryRoleGrantPrivilegeRequest {
 1: required i32 protocol_version = sentry_common_service.TSENTRY_SERVICE_V1,
 2: required string requestorUserName, # user on whose behalf the request is issued
 3: required string roleName,
-5: required TSentryPrivilege privilege
+5: optional TSentryPrivilege privilege,
+6: optional set<TSentryPrivilege> privileges
 }
 struct TAlterSentryRoleGrantPrivilegeResponse {
 1: required sentry_common_service.TSentryResponseStatus status
 2: optional TSentryPrivilege privilege
+3: optional set<TSentryPrivilege> privileges
 }
 
 # REVOKE ... ON ... FROM ROLE ...
@@ -117,7 +119,8 @@ struct TAlterSentryRoleRevokePrivilegeRequest {
 1: required i32 protocol_version = sentry_common_service.TSENTRY_SERVICE_V1,
 2: required string requestorUserName, # user on whose behalf the request is issued
 3: required string roleName,
-5: required TSentryPrivilege privilege
+5: optional TSentryPrivilege privilege,
+6: optional set<TSentryPrivilege> privileges
 }
 struct TAlterSentryRoleRevokePrivilegeResponse {
 1: required sentry_common_service.TSentryResponseStatus status

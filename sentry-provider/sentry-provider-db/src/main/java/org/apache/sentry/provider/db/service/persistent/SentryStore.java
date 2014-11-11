@@ -318,19 +318,27 @@ public class SentryStore {
   public CommitContext alterSentryRoleGrantPrivilege(String grantorPrincipal,
       String roleName, TSentryPrivilege privilege)
       throws SentryUserException {
+    return alterSentryRoleGrantPrivileges(grantorPrincipal,
+        roleName, Sets.newHashSet(privilege));
+  }
+
+  public CommitContext alterSentryRoleGrantPrivileges(String grantorPrincipal,
+      String roleName, Set<TSentryPrivilege> privileges)
+      throws SentryUserException {
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     roleName = trimAndLower(roleName);
     try {
       pm = openTransaction();
-      // first do grant check
-      grantOptionCheck(pm, grantorPrincipal, privilege);
+      for (TSentryPrivilege privilege : privileges) {
+        // first do grant check
+        grantOptionCheck(pm, grantorPrincipal, privilege);
 
-      MSentryPrivilege mPrivilege =
-          alterSentryRoleGrantPrivilegeCore(pm, roleName, privilege);
-      // capture the new privilege
-      if (mPrivilege != null) {
-        convertToTSentryPrivilege(mPrivilege, privilege);
+        MSentryPrivilege mPrivilege = alterSentryRoleGrantPrivilegeCore(pm, roleName, privilege);
+
+        if (mPrivilege != null) {
+          convertToTSentryPrivilege(mPrivilege, privilege);
+        }
       }
       CommitContext commit = commitUpdateTransaction(pm);
       rollbackTransaction = false;
@@ -392,17 +400,25 @@ public class SentryStore {
     return mPrivilege;
   }
 
-  public CommitContext alterSentryRoleRevokePrivilege(String grantorPrincipal, String roleName,
-      TSentryPrivilege tPrivilege) throws SentryUserException {
+  public CommitContext alterSentryRoleRevokePrivilege(String grantorPrincipal,
+      String roleName, TSentryPrivilege tPrivilege) throws SentryUserException {
+    return alterSentryRoleRevokePrivileges(grantorPrincipal,
+        roleName, Sets.newHashSet(tPrivilege));
+  }
+
+  public CommitContext alterSentryRoleRevokePrivileges(String grantorPrincipal,
+      String roleName, Set<TSentryPrivilege> tPrivileges) throws SentryUserException {
     boolean rollbackTransaction = true;
     PersistenceManager pm = null;
     roleName = safeTrimLower(roleName);
     try {
       pm = openTransaction();
-      // first do revoke check
-      grantOptionCheck(pm, grantorPrincipal, tPrivilege);
+      for (TSentryPrivilege tPrivilege : tPrivileges) {
+        // first do revoke check
+        grantOptionCheck(pm, grantorPrincipal, tPrivilege);
 
-      alterSentryRoleRevokePrivilegeCore(pm, roleName, tPrivilege);
+        alterSentryRoleRevokePrivilegeCore(pm, roleName, tPrivilege);
+      }
 
       CommitContext commit = commitUpdateTransaction(pm);
       rollbackTransaction = false;
