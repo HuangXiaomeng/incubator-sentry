@@ -1145,6 +1145,7 @@ public class TestSentryStore {
 
   }
 
+  @Test
   public void testRenameTableWithColumn() throws Exception {
     String roleName1 = "role1", roleName2 = "role2";
     String grantor = "g1";
