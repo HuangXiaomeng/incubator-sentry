@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.SecurityUtil;
 
 import org.apache.curator.x.discovery.ServiceInstance;
 import org.apache.sentry.SentryUserException;
@@ -31,8 +32,11 @@ import org.apache.sentry.provider.db.service.persistent.HAContext;
 import org.apache.sentry.provider.db.service.persistent.ServiceManager;
 import org.apache.sentry.provider.db.service.thrift.SentryPolicyServiceClient;
 import org.apache.sentry.provider.db.service.thrift.SentryPolicyServiceClientDefaultImpl;
+import org.apache.sentry.service.thrift.ServiceConstants.ServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
 
 public class HAClientInvocationHandler implements InvocationHandler {
 
@@ -48,6 +52,7 @@ public class HAClientInvocationHandler implements InvocationHandler {
   public HAClientInvocationHandler(Configuration conf) throws Exception {
     this.conf = conf;
     manager = new ServiceManager(new HAContext(conf));
+    checkClientConf();
     renewSentryClient();
   }
 
@@ -101,6 +106,16 @@ public class HAClientInvocationHandler implements InvocationHandler {
         manager.reportError(currentServiceInstance);
         LOGGER.info("Transport exception while opening transport:", e, e.getMessage());
       }
+    }
+  }
+
+  private void checkClientConf() {
+    if (conf.getBoolean(ServerConfig.SENTRY_HA_ZOOKEEPER_SECURITY,
+        ServerConfig.SENTRY_HA_ZOOKEEPER_SECURITY_DEFAULT)) {
+      String serverPrincipal = Preconditions.checkNotNull(conf.get(ServerConfig.PRINCIPAL),
+          ServerConfig.PRINCIPAL + " is required");
+      Preconditions.checkArgument(serverPrincipal.contains(SecurityUtil.HOSTNAME_PATTERN),
+          ServerConfig.PRINCIPAL + " : " + serverPrincipal + " should contain " + SecurityUtil.HOSTNAME_PATTERN);
     }
   }
 }
