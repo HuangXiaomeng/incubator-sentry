@@ -109,10 +109,14 @@ public class ServiceConstants {
     public static final String SENTRY_HA_ENABLED = "sentry.ha.enabled";
     public static final boolean SENTRY_HA_ENABLED_DEFAULT = false;
     public static final String SENTRY_HA_ZK_PROPERTY_PREFIX = "sentry.ha.zookeeper.";
+    public static final String SENTRY_HA_ZOOKEEPER_SECURITY = SENTRY_HA_ZK_PROPERTY_PREFIX + "security";
+    public static final boolean SENTRY_HA_ZOOKEEPER_SECURITY_DEFAULT = false;
     public static final String SENTRY_HA_ZOOKEEPER_QUORUM = SENTRY_HA_ZK_PROPERTY_PREFIX + "quorum";
     public static final String SENTRY_HA_ZOOKEEPER_QUORUM_DEFAULT = "localhost:2181";
-    public static final String SENTRY_HA_ZOOKEEPER_SESSION_TIMEOUT = SENTRY_HA_ZK_PROPERTY_PREFIX + "session.timeout";
-    public static final int SENTRY_HA_ZOOKEEPER_SESSION_TIMEOUT_DEFAULT = 600*600;
+    public static final String SENTRY_HA_ZOOKEEPER_RETRIES_MAX_COUNT = SENTRY_HA_ZK_PROPERTY_PREFIX + "session.retries.max.count";
+    public static final int SENTRY_HA_ZOOKEEPER_RETRIES_MAX_COUNT_DEFAULT = 3;
+    public static final String SENTRY_HA_ZOOKEEPER_SLEEP_BETWEEN_RETRIES_MS = SENTRY_HA_ZK_PROPERTY_PREFIX + "session.sleep.between.retries.ms";
+    public static final int SENTRY_HA_ZOOKEEPER_SLEEP_BETWEEN_RETRIES_MS_DEFAULT = 100;
     public static final String SENTRY_HA_ZOOKEEPER_NAMESPACE = SENTRY_HA_ZK_PROPERTY_PREFIX + "namespace";
     public static final String SENTRY_HA_ZOOKEEPER_NAMESPACE_DEFAULT = "/sentry";
 
