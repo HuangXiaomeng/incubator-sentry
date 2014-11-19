@@ -55,7 +55,8 @@ import com.google.common.io.Files;
 public class TestSentryStore {
 
   private File dataDir;
-  private SentryStore sentryStore;
+  protected SentryStore sentryStore;
+  protected Configuration conf = new Configuration(false);
   private String[] adminGroups = {"adminGroup1"};
   private PolicyFile policyFile;
   private File policyFilePath;
@@ -63,7 +64,6 @@ public class TestSentryStore {
   @Before
   public void setup() throws Exception {
     dataDir = new File(Files.createTempDir(), "sentry_policy_db");
-    Configuration conf = new Configuration(false);
     conf.set(ServerConfig.SENTRY_VERIFY_SCHEM_VERSION, "false");
     conf.set(ServerConfig.SENTRY_STORE_JDBC_URL,
         "jdbc:derby:;databaseName=" + dataDir.getPath() + ";create=true");
@@ -1048,7 +1048,7 @@ public class TestSentryStore {
         .size());
   }
 
-  private TSentryAuthorizable toTSentryAuthorizable(
+  protected TSentryAuthorizable toTSentryAuthorizable(
       TSentryPrivilege tSentryPrivilege) {
     TSentryAuthorizable tSentryAuthorizable = new TSentryAuthorizable();
     tSentryAuthorizable.setServer(tSentryPrivilege.getServerName());

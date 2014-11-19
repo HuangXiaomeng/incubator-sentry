@@ -99,6 +99,7 @@ public class SentryStore {
   private final PersistenceManagerFactory pmf;
   private Configuration conf;
   private CommitContextFactory ccf;
+  private final boolean haEnabled;
 
   public SentryStore(Configuration conf) throws SentryNoSuchObjectException,
   SentryAccessDeniedException {
@@ -133,7 +134,7 @@ public class SentryStore {
       }
     }
 
-
+    haEnabled = conf.getBoolean(ServerConfig.SENTRY_HA_ENABLED, false);
     boolean checkSchemaVersion = conf.get(
         ServerConfig.SENTRY_VERIFY_SCHEM_VERSION,
         ServerConfig.SENTRY_VERIFY_SCHEM_VERSION_DEFAULT).equalsIgnoreCase(
@@ -187,6 +188,9 @@ public class SentryStore {
   private synchronized PersistenceManager openTransaction() {
     PersistenceManager pm = pmf.getPersistenceManager();
     Transaction currentTransaction = pm.currentTransaction();
+    if (haEnabled) {
+      currentTransaction.setOptimistic(true);
+    }
     currentTransaction.begin();
     return pm;
   }
@@ -401,7 +405,79 @@ public class SentryStore {
         mPrivilege = convertToMSentryPrivilege(privilege);
       }
       mPrivilege.appendRole(mRole);
-      pm.makePersistent(mRole);
+      pm.makePersistent(mPrivilege);
+    }
+    return mPrivilege;
+  }
+
+  @VisibleForTesting
+  CommitContext alterSentryRoleGrantPrivilege(String grantorPrincipal,
+      MSentryRole mRole, TSentryPrivilege privilege) throws SentryUserException {
+    boolean rollbackTransaction = true;
+    PersistenceManager pm = null;
+    try {
+      pm = openTransaction();
+      // first do grant check
+      grantOptionCheck(pm, grantorPrincipal, privilege);
+
+      MSentryPrivilege mPrivilege =
+          alterSentryRoleGrantPrivilegeCore(pm, mRole, privilege);
+      // capture the new privilege
+      if (mPrivilege != null) {
+        convertToTSentryPrivilege(mPrivilege, privilege);
+      }
+      CommitContext commit = commitUpdateTransaction(pm);
+      rollbackTransaction = false;
+      return commit;
+    } finally {
+      if (rollbackTransaction) {
+        rollbackTransaction(pm);
+      }
+    }
+  }
+
+  @VisibleForTesting
+  private MSentryPrivilege alterSentryRoleGrantPrivilegeCore(PersistenceManager pm,
+      MSentryRole mRole, TSentryPrivilege privilege)
+      throws SentryNoSuchObjectException, SentryInvalidInputException {
+    MSentryPrivilege mPrivilege = null;
+    if (mRole == null) {
+      throw new SentryNoSuchObjectException("Role should not be null.");
+    } else {
+      if ((!isNULL(privilege.getTableName())) || (!isNULL(privilege.getDbName()))) {
+        // If Grant is for ALL and Either INSERT/SELECT already exists..
+        // need to remove it and GRANT ALL..
+        if (privilege.getAction().equalsIgnoreCase("*")) {
+          TSentryPrivilege tNotAll = new TSentryPrivilege(privilege);
+          tNotAll.setAction(AccessConstants.SELECT);
+          MSentryPrivilege mSelect = getMSentryPrivilege(tNotAll, pm);
+          tNotAll.setAction(AccessConstants.INSERT);
+          MSentryPrivilege mInsert = getMSentryPrivilege(tNotAll, pm);
+          if ((mSelect != null) && (mRole.getPrivileges().contains(mSelect))) {
+            mSelect.removeRole(mRole);
+            pm.makePersistent(mSelect);
+          }
+          if ((mInsert != null) && (mRole.getPrivileges().contains(mInsert))) {
+            mInsert.removeRole(mRole);
+            pm.makePersistent(mInsert);
+          }
+        } else {
+          // If Grant is for Either INSERT/SELECT and ALL already exists..
+          // do nothing..
+          TSentryPrivilege tAll = new TSentryPrivilege(privilege);
+          tAll.setAction(AccessConstants.ALL);
+          MSentryPrivilege mAll = getMSentryPrivilege(tAll, pm);
+          if ((mAll != null) && (mRole.getPrivileges().contains(mAll))) {
+            return null;
+          }
+        }
+      }
+
+      mPrivilege = getMSentryPrivilege(privilege, pm);
+      if (mPrivilege == null) {
+        mPrivilege = convertToMSentryPrivilege(privilege);
+      }
+      mPrivilege.appendRole(mRole);
       pm.makePersistent(mPrivilege);
     }
     return mPrivilege;
@@ -472,7 +548,6 @@ public class SentryStore {
       for (MSentryPrivilege childPriv : privilegeGraph) {
         revokePartial(pm, tPrivilege, mRole, childPriv);
       }
-      pm.makePersistent(mRole);
     }
   }
 
@@ -518,7 +593,6 @@ public class SentryStore {
       persistedPriv = getMSentryPrivilege(convertToTSentryPrivilege(currentPrivilege), pm);
       if (persistedPriv == null) {
         persistedPriv = convertToMSentryPrivilege(convertToTSentryPrivilege(currentPrivilege));
-        mRole.appendPrivilege(persistedPriv);
       }
       persistedPriv.appendRole(mRole);
       pm.makePersistent(persistedPriv);

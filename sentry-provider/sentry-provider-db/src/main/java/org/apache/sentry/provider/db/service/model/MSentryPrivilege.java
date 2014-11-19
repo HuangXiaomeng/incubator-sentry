@@ -163,6 +163,7 @@ public class MSentryPrivilege {
 
   public void appendRole(MSentryRole role) {
     roles.add(role);
+    role.appendPrivilege(this);
   }
 
   public Set<MSentryRole> getRoles() {

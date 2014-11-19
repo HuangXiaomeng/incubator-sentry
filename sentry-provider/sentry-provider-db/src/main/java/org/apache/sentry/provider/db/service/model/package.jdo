@@ -28,6 +28,7 @@
 <jdo>  
   <package name="org.apache.sentry.provider.db.service.model">  
     <class name="MSentryGroup" identity-type="datastore" table="SENTRY_GROUP" detachable="true">  
+      <version strategy="version-number"/>
       <datastore-identity>
         <column name="GROUP_ID"/>
       </datastore-identity>
@@ -46,6 +47,7 @@
     </class>
     
     <class name="MSentryRole" identity-type="datastore" table="SENTRY_ROLE" detachable="true">  
+      <version strategy="version-number"/>
       <datastore-identity>
         <column name="ROLE_ID"/>
       </datastore-identity>
