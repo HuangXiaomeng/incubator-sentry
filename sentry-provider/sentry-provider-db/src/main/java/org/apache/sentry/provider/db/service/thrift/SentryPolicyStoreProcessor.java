@@ -104,7 +104,7 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
     if(conf.getBoolean(ServerConfig.SENTRY_HA_ENABLED,
         ServerConfig.SENTRY_HA_ENABLED_DEFAULT)){
       haContext = new HAContext(conf);
-      sentryStore = new SentryStore(conf);
+      sentryStore = new SentryStore(conf, haContext);
       ServiceRegister reg = new ServiceRegister(haContext);
       reg.regService(conf.get(ServerConfig.RPC_ADDRESS),
           conf.getInt(ServerConfig.RPC_PORT,ServerConfig.RPC_PORT_DEFAULT));

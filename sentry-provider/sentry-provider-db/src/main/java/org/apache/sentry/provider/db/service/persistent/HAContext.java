@@ -51,6 +51,8 @@ public class HAContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(HAContext.class);
 
   public final static String SENTRY_SERVICE_REGISTER_NAMESPACE = "sentry-service";
+  public final static String SENTRY_SEQUENCE_ID_COUNTER_NAMESPACE = "sentry-sequence-id";
+
   private final String zookeeperQuorum;
   private final int retriesMaxCount;
   private final int sleepMsBetweenRetries;

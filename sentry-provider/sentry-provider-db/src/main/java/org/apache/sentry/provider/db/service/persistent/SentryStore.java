@@ -98,8 +98,14 @@ public class SentryStore {
   private long commitSequenceId;
   private final PersistenceManagerFactory pmf;
   private Configuration conf;
+  private CommitContextFactory ccf;
 
   public SentryStore(Configuration conf) throws SentryNoSuchObjectException,
+  SentryAccessDeniedException {
+    this(conf, null);
+  }
+
+  public SentryStore(Configuration conf, HAContext haContext) throws SentryNoSuchObjectException,
   SentryAccessDeniedException {
     commitSequenceId = 0;
     this.conf = conf;
@@ -137,6 +143,7 @@ public class SentryStore {
       prop.setProperty("datanucleus.fixedDatastore", "false");
     }
     pmf = JDOHelper.getPersistenceManagerFactory(prop);
+    ccf = new CommitContextFactory(haContext);
     verifySentryStoreSchema(conf, checkSchemaVersion);
   }
 
@@ -189,7 +196,7 @@ public class SentryStore {
    */
   private synchronized CommitContext commitUpdateTransaction(PersistenceManager pm) {
     commitTransaction(pm);
-    return new CommitContext(SERVER_UUID, incrementGetSequenceId());
+    return ccf.getCommitContext(SERVER_UUID, incrementGetSequenceId());
   }
 
   /**
