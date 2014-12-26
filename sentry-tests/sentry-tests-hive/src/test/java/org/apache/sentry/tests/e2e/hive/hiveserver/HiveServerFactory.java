@@ -32,6 +32,7 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.sentry.binding.hive.conf.HiveAuthzConf;
 import org.apache.sentry.binding.hive.conf.HiveAuthzConf.AuthzConfVars;
+import org.apache.sentry.binding.hive.v2.HiveAuthzBindingSessionHookV2;
 import org.apache.sentry.provider.file.LocalGroupResourceAuthorizationProvider;
 import org.fest.reflect.core.Reflection;
 import org.junit.Assert;
@@ -212,7 +213,7 @@ public class HiveServerFactory {
 
     if(!properties.containsKey(HiveConf.ConfVars.HIVE_SERVER2_SESSION_HOOK.varname)) {
       hiveConf.set(HiveConf.ConfVars.HIVE_SERVER2_SESSION_HOOK.varname,
-        "org.apache.sentry.binding.hive.HiveAuthzBindingSessionHook");
+          HiveAuthzBindingSessionHookV2.class.getName());
     }
     hiveConf.set(HIVESERVER2_IMPERSONATION, "false");
     out = new FileOutputStream(hiveSite);

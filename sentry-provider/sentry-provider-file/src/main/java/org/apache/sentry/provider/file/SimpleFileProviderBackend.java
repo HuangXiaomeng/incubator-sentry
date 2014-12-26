@@ -16,19 +16,20 @@
  */
 package org.apache.sentry.provider.file;
 
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Interner;
-import com.google.common.collect.Interners;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import com.google.common.collect.Table;
-import com.google.common.collect.Table.Cell;
+import static org.apache.sentry.provider.common.ProviderConstants.ROLE_SPLITTER;
+import static org.apache.sentry.provider.file.PolicyFileConstants.DATABASES;
+import static org.apache.sentry.provider.file.PolicyFileConstants.GROUPS;
+import static org.apache.sentry.provider.file.PolicyFileConstants.ROLES;
+import static org.apache.sentry.provider.file.PolicyFileConstants.USERS;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -45,20 +46,19 @@ import org.apache.shiro.config.Ini;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static org.apache.sentry.provider.file.PolicyFileConstants.DATABASES;
-import static org.apache.sentry.provider.file.PolicyFileConstants.GROUPS;
-import static org.apache.sentry.provider.file.PolicyFileConstants.ROLES;
-import static org.apache.sentry.provider.file.PolicyFileConstants.ROLE_SPLITTER;
-import static org.apache.sentry.provider.file.PolicyFileConstants.USERS;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
+import com.google.common.collect.Table.Cell;
 
 public class SimpleFileProviderBackend implements ProviderBackend {
 
@@ -147,6 +147,9 @@ public class SimpleFileProviderBackend implements ProviderBackend {
     if (!initialized) {
       throw new IllegalStateException("Backend has not been properly initialized");
     }
+    // Now we initialize PolicyEngine only connection session start,
+    // so we may need to reload PolicyFile for every DDL
+    parse();
     ImmutableSet.Builder<String> resultBuilder = ImmutableSet.builder();
     for (String groupName : groups) {
       for (Map.Entry<String, Set<String>> row : groupRolePrivilegeTable.row(groupName)
@@ -233,7 +236,7 @@ public class SimpleFileProviderBackend implements ProviderBackend {
         }
       }
       parseIni(null, ini, validators, resourcePath, groupRolePrivilegeTableTemp);
-      mergeResult(groupRolePrivilegeTableTemp);
+      copyResult(groupRolePrivilegeTableTemp);
       groupRolePrivilegeTableTemp.clear();
       Ini.Section filesSection = ini.getSection(DATABASES);
       if(filesSection == null) {
@@ -268,8 +271,10 @@ public class SimpleFileProviderBackend implements ProviderBackend {
           }
         }
       }
-      mergeResult(groupRolePrivilegeTableTemp);
-      groupRolePrivilegeTableTemp.clear();
+      if (!groupRolePrivilegeTableTemp.isEmpty()) {
+        copyResult(groupRolePrivilegeTableTemp);
+        groupRolePrivilegeTableTemp.clear();
+      }
     } catch (Exception e) {
       configErrors.add("Error processing file " + resourcePath + e.getMessage());
       LOGGER.error("Error processing file, ignoring " + resourcePath, e);
@@ -285,7 +290,8 @@ public class SimpleFileProviderBackend implements ProviderBackend {
     return uri.getAuthority() == null && uri.getScheme() == null && !path.isUriPathAbsolute();
   }
 
-  private void mergeResult(Table<String, String, Set<String>> groupRolePrivilegeTableTemp) {
+  private void copyResult(Table<String, String, Set<String>> groupRolePrivilegeTableTemp) {
+    groupRolePrivilegeTable.clear();
     for (Cell<String, String, Set<String>> cell : groupRolePrivilegeTableTemp.cellSet()) {
       String groupName = cell.getRowKey();
       String roleName = cell.getColumnKey();

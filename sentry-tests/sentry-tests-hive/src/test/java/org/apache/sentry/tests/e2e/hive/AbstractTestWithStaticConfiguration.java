@@ -19,6 +19,7 @@ package org.apache.sentry.tests.e2e.hive;
 import static org.apache.sentry.provider.common.ProviderConstants.AUTHORIZABLE_SPLITTER;
 import static org.apache.sentry.provider.common.ProviderConstants.PRIVILEGE_PREFIX;
 import static org.apache.sentry.provider.common.ProviderConstants.ROLE_SPLITTER;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +41,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
-import org.apache.sentry.binding.hive.SentryHiveAuthorizationTaskFactoryImpl;
+import org.apache.sentry.binding.hive.v2.impl.SentryAuthorizationTaskFactoryImplV2;
 import org.apache.sentry.binding.metastore.SentryMetastorePostEventListener;
 import org.apache.sentry.core.model.db.DBModelAction;
 import org.apache.sentry.core.model.db.DBModelAuthorizable;
@@ -60,7 +61,6 @@ import org.apache.sentry.tests.e2e.hive.hiveserver.HiveServerFactory;
 import org.apache.tools.ant.util.StringUtils;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
@@ -207,7 +207,7 @@ public abstract class AbstractTestWithStaticConfiguration {
     PolicyFile policyFile = PolicyFile.setAdminOnServer1(ADMIN1)
         .setUserGroupMapping(StaticUserGroup.getStaticMapping());
     policyFile.write(policyFileLocation);
-    
+
     String policyURI;
     if (policyOnHdfs) {
       String dfsUri = FileSystem.getDefaultUri(fileSystem.getConf()).toString();
@@ -218,7 +218,7 @@ public abstract class AbstractTestWithStaticConfiguration {
     } else {
       policyURI = policyFileLocation.getPath();
     }
-    
+
     boolean startSentry = new Boolean(System.getProperty(EXTERNAL_SENTRY_SERVICE, "false"));
     if (useSentryService && (!startSentry)) {
       setupSentryService();
@@ -347,7 +347,7 @@ public abstract class AbstractTestWithStaticConfiguration {
     properties.put(HiveServerFactory.AUTHZ_PROVIDER_BACKEND,
         SimpleDBProviderBackend.class.getName());
     properties.put(ConfVars.HIVE_AUTHORIZATION_TASK_FACTORY.varname,
-        SentryHiveAuthorizationTaskFactoryImpl.class.getName());
+        SentryAuthorizationTaskFactoryImplV2.class.getName());
     properties
         .put(ConfVars.HIVE_SERVER2_THRIFT_MIN_WORKER_THREADS.varname, "2");
     properties.put(ServerConfig.SECURITY_MODE, ServerConfig.SECURITY_MODE_NONE);

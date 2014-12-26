@@ -25,15 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
-import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
 import org.apache.curator.test.TestingServer;
-import org.apache.sentry.binding.hive.SentryHiveAuthorizationTaskFactoryImpl;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
+import org.apache.sentry.binding.hive.v2.impl.SentryAuthorizationTaskFactoryImplV2;
 import org.apache.sentry.provider.db.SimpleDBProviderBackend;
 import org.apache.sentry.provider.file.PolicyFile;
 import org.apache.sentry.service.thrift.SentryService;
@@ -46,6 +42,10 @@ import org.apache.sentry.tests.e2e.hive.StaticUserGroup;
 import org.apache.sentry.tests.e2e.hive.hiveserver.HiveServerFactory;
 import org.junit.After;
 import org.junit.BeforeClass;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 
 public abstract class AbstractTestWithDbProvider extends AbstractTestWithHiveServer {
 
@@ -78,7 +78,7 @@ public abstract class AbstractTestWithDbProvider extends AbstractTestWithHiveSer
     policyFile = PolicyFile.setAdminOnServer1(ADMINGROUP);
     properties.put(HiveServerFactory.AUTHZ_PROVIDER_BACKEND, SimpleDBProviderBackend.class.getName());
     properties.put(ConfVars.HIVE_AUTHORIZATION_TASK_FACTORY.varname,
-        SentryHiveAuthorizationTaskFactoryImpl.class.getName());
+        SentryAuthorizationTaskFactoryImplV2.class.getName());
     properties.put(ServerConfig.SECURITY_MODE, ServerConfig.SECURITY_MODE_NONE);
     properties.put(ServerConfig.ADMIN_GROUPS, ADMINGROUP);
     properties.put(ServerConfig.RPC_ADDRESS, SERVER_HOST);
