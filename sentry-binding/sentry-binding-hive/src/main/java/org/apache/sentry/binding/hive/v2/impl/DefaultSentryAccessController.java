@@ -18,6 +18,7 @@
 package org.apache.sentry.binding.hive.v2.impl;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -45,6 +46,7 @@ import org.apache.sentry.binding.hive.v2.util.SentryAuthorizerUtil;
 import org.apache.sentry.core.common.ActiveRoleSet;
 import org.apache.sentry.core.common.Authorizable;
 import org.apache.sentry.core.model.db.AccessConstants;
+import org.apache.sentry.core.model.db.DBModelAuthorizable;
 import org.apache.sentry.core.model.db.PrivilegeInfo;
 import org.apache.sentry.core.model.db.Server;
 import org.apache.sentry.provider.db.service.thrift.TSentryPrivilege;
@@ -205,10 +207,19 @@ public class DefaultSentryAccessController extends SentryAccessController {
         String msg = "Error creating Sentry client V2: " + e.getMessage();
         throw new SentryAccessControlException(msg, e);
       }
-      List<? extends Authorizable> authorizable =
-          SentryAuthorizerUtil.convert2SentryPrivilege(new Server(serverName), privObj);
-      Set<TSentryPrivilege> tPrivilges = sentryClient.listPrivilegesByRoleName(
-          authenticator.getUserName(), principal.getName(), authorizable);
+      List<List<DBModelAuthorizable>> authorizables =
+          SentryAuthorizerUtil.getAuthzHierarchy(new Server(serverName), privObj);
+      Set<TSentryPrivilege> tPrivilges = new HashSet<TSentryPrivilege>();
+      if (authorizables != null && !authorizables.isEmpty()) {
+        for (List<? extends Authorizable> authorizable : authorizables) {
+          tPrivilges.addAll(sentryClient.listPrivilegesByRoleName(authenticator.getUserName(),
+              principal.getName(), authorizable));
+        }
+      } else {
+        tPrivilges.addAll(sentryClient.listPrivilegesByRoleName(authenticator.getUserName(),
+              principal.getName(), null));
+      }
+
       if (tPrivilges != null && !tPrivilges.isEmpty()) {
         for (TSentryPrivilege privilege : tPrivilges) {
           infoList.add(SentryAuthorizerUtil.convert2HivePrivilegeInfo(privilege, principal));
@@ -404,6 +415,7 @@ public class DefaultSentryAccessController extends SentryAccessController {
           String grantorName = grantorPrincipal.getName();
           String roleName = principal.getName();
           String action = SentryAuthorizerUtil.convert2SentryAction(privilege);
+          List<String> columnNames = privilege.getColumns();
           Boolean grantOp = null;
           if (isGrant) {
             grantOp = grantOption;
@@ -436,14 +448,26 @@ public class DefaultSentryAccessController extends SentryAccessController {
                 .build();
               break;
             case TABLE_OR_VIEW:
-              privInfo = privBuilder
+              privBuilder
                 .setPrivilegeScope(PrivilegeScope.TABLE.toString())
                 .setServerName(serverName)
                 .setDbName(hivePrivObject.getDbname())
                 .setTableOrViewName(hivePrivObject.getObjectName())
                 .setAction(action)
-                .setGrantOption(grantOp)
-                .build();
+                .setGrantOption(grantOp);
+              // TODO workaround for column level security
+              if (columnNames != null && !columnNames.isEmpty()) {
+                if (action.equalsIgnoreCase(AccessConstants.INSERT) ||
+                    action.equalsIgnoreCase(AccessConstants.ALL)) {
+                  String msg = SentryHiveConstants.PRIVILEGE_NOT_SUPPORTED
+                      + privilege.getName() + " on Column";
+                  throw new SentryAccessControlException(msg);
+                }
+                privBuilder
+                  .setPrivilegeScope(PrivilegeScope.COLUMN.toString())
+                  .setColumns(columnNames);
+              }
+              privInfo = privBuilder.build();
               break;
             case LOCAL_URI:
             case DFS_URI:

@@ -16,11 +16,14 @@
  */
 package org.apache.sentry.core.model.db;
 
+import java.util.List;
+
 public class PrivilegeInfo {
   private String privilegeScope;
   private String serverName;
   private String dbName;
   private String tableOrViewName;
+  private List<String> colums;
   private String uri;
   private String action;
   private Boolean grantOption;
@@ -30,6 +33,7 @@ public class PrivilegeInfo {
     private String serverName;
     private String dbName;
     private String tableOrViewName;
+    private List<String> colums;
     private String uri;
     private String action;
     private Boolean grantOption;
@@ -51,6 +55,11 @@ public class PrivilegeInfo {
 
     public Builder setTableOrViewName(String tableOrViewName) {
       this.tableOrViewName = tableOrViewName;
+      return this;
+    }
+
+    public Builder setColumns(List<String> colums) {
+      this.colums = colums;
       return this;
     }
 
@@ -79,6 +88,7 @@ public class PrivilegeInfo {
     this.serverName = builder.serverName;
     this.dbName = builder.dbName;
     this.tableOrViewName = builder.tableOrViewName;
+    this.colums = builder.colums;
     this.uri = builder.uri;
     this.action = builder.action;
     this.grantOption = builder.grantOption;
@@ -98,6 +108,10 @@ public class PrivilegeInfo {
 
   public String getTableOrViewName() {
     return tableOrViewName;
+  }
+
+  public List<String> getColumns() {
+    return colums;
   }
 
   public String getURI() {

@@ -44,6 +44,7 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.sentry.core.common.utils.PathUtils;
 import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.core.model.db.AccessURI;
+import org.apache.sentry.core.model.db.Column;
 import org.apache.sentry.core.model.db.DBModelAuthorizable;
 import org.apache.sentry.core.model.db.Database;
 import org.apache.sentry.core.model.db.Server;
@@ -89,22 +90,35 @@ public class SentryAuthorizerUtil {
    * @param server
    * @param privilege
    */
-  public static List<DBModelAuthorizable> convert2SentryPrivilege(
+  public static List<List<DBModelAuthorizable>> getAuthzHierarchy (
       Server server, HivePrivilegeObject privilege) {
-    List<DBModelAuthorizable> objectHierarchy = new ArrayList<DBModelAuthorizable>();
+    List<DBModelAuthorizable> baseHierarchy = new ArrayList<DBModelAuthorizable>();
+    List<List<DBModelAuthorizable>> objectHierarchy = new ArrayList<List<DBModelAuthorizable>>();
     if (privilege.getType() != null) {
       switch (privilege.getType()) {
         case GLOBAL:
-          objectHierarchy.add(new Server(privilege.getObjectName()));
+          baseHierarchy.add(new Server(privilege.getObjectName()));
+          objectHierarchy.add(baseHierarchy);
           break;
         case DATABASE:
-          objectHierarchy.add(server);
-          objectHierarchy.add(new Database(privilege.getDbname()));
+          baseHierarchy.add(server);
+          baseHierarchy.add(new Database(privilege.getDbname()));
+          objectHierarchy.add(baseHierarchy);
           break;
         case TABLE_OR_VIEW:
-          objectHierarchy.add(server);
-          objectHierarchy.add(new Database(privilege.getDbname()));
-          objectHierarchy.add(new Table(privilege.getObjectName()));
+          baseHierarchy.add(server);
+          baseHierarchy.add(new Database(privilege.getDbname()));
+          baseHierarchy.add(new Table(privilege.getObjectName()));
+          if (privilege.getColumns() != null) {
+            for (String columnName : privilege.getColumns()) {
+              List<DBModelAuthorizable> columnHierarchy =
+                  new ArrayList<DBModelAuthorizable>(baseHierarchy);
+              columnHierarchy.add(new Column(columnName));
+              objectHierarchy.add(columnHierarchy);
+            }
+          } else {
+            objectHierarchy.add(baseHierarchy);
+          }
           break;
         case LOCAL_URI:
         case DFS_URI:
@@ -112,8 +126,9 @@ public class SentryAuthorizerUtil {
             break;
           }
           try {
-            objectHierarchy.add(server);
-            objectHierarchy.add(parseURI(privilege.getObjectName()));
+            baseHierarchy.add(server);
+            baseHierarchy.add(parseURI(privilege.getObjectName()));
+            objectHierarchy.add(baseHierarchy);
           } catch (Exception e) {
             throw new AuthorizationException("Failed to get File URI", e);
           }
@@ -142,7 +157,7 @@ public class SentryAuthorizerUtil {
     List<List<DBModelAuthorizable>> hierarchyList = new ArrayList<List<DBModelAuthorizable>>();
     if (privilges != null && !privilges.isEmpty()) {
       for (HivePrivilegeObject p : privilges) {
-        hierarchyList.add(convert2SentryPrivilege(server, p));
+        hierarchyList.addAll(getAuthzHierarchy(server, p));
       }
     }
     return hierarchyList;
@@ -229,6 +244,11 @@ public class SentryAuthorizerUtil {
       case TABLE:
         privilege = new HivePrivilegeObject(HivePrivilegeObjectType.TABLE_OR_VIEW,
             tSentryPrivilege.getDbName(), tSentryPrivilege.getTableName());
+        break;
+      case COLUMN:
+        privilege = new HivePrivilegeObject(HivePrivilegeObjectType.COLUMN,
+            tSentryPrivilege.getDbName(), tSentryPrivilege.getTableName(),
+            null, tSentryPrivilege.getColumnName());
         break;
       case URI:
         String uriString = tSentryPrivilege.getURI();

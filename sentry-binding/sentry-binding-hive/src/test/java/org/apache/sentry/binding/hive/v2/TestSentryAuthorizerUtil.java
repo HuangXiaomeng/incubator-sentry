@@ -36,6 +36,7 @@ import org.apache.hadoop.hive.ql.security.authorization.plugin.HivePrivilegeObje
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveRoleGrant;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.sentry.binding.hive.v2.util.SentryAuthorizerUtil;
+import org.apache.sentry.core.common.Authorizable;
 import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.core.model.db.DBModelAuthorizable;
 import org.apache.sentry.core.model.db.Server;
@@ -93,8 +94,11 @@ public class TestSentryAuthorizerUtil {
     Server server = new Server("hs2");
     HivePrivilegeObject privilege = new HivePrivilegeObject(
         HivePrivilegeObjectType.DATABASE, "db1", null);
-    List<DBModelAuthorizable> hierarchy =
-        SentryAuthorizerUtil.convert2SentryPrivilege(server, privilege);
+    List<List<DBModelAuthorizable>> hierarchList =
+        SentryAuthorizerUtil.getAuthzHierarchy(server, privilege);
+    Assert.assertNotNull(hierarchList);
+    Assert.assertTrue(hierarchList.size() == 1);
+    List<? extends Authorizable> hierarchy = hierarchList.get(0);
     Assert.assertNotNull(hierarchy);
     Assert.assertTrue(hierarchy.size() == 2);
     Assert.assertEquals(hierarchy.get(0).getName(), "hs2");
@@ -106,8 +110,11 @@ public class TestSentryAuthorizerUtil {
     Server server = new Server("hs2");
     HivePrivilegeObject privilege = new HivePrivilegeObject(
         HivePrivilegeObjectType.TABLE_OR_VIEW, "db1", "tb1");
-    List<DBModelAuthorizable> hierarchy =
-        SentryAuthorizerUtil.convert2SentryPrivilege(server, privilege);
+    List<List<DBModelAuthorizable>> hierarchList =
+        SentryAuthorizerUtil.getAuthzHierarchy(server, privilege);
+    Assert.assertNotNull(hierarchList);
+    Assert.assertTrue(hierarchList.size() == 1);
+    List<? extends Authorizable> hierarchy = hierarchList.get(0);
     Assert.assertNotNull(hierarchy);
     Assert.assertTrue(hierarchy.size() == 3);
     Assert.assertEquals(hierarchy.get(0).getName(), "hs2");
@@ -120,8 +127,11 @@ public class TestSentryAuthorizerUtil {
     Server server = new Server("hs2");
     HivePrivilegeObject privilege = new HivePrivilegeObject(
         HivePrivilegeObjectType.LOCAL_URI, null, "file://path/to/file");
-    List<DBModelAuthorizable> hierarchy =
-        SentryAuthorizerUtil.convert2SentryPrivilege(server, privilege);
+    List<List<DBModelAuthorizable>> hierarchList =
+        SentryAuthorizerUtil.getAuthzHierarchy(server, privilege);
+    Assert.assertNotNull(hierarchList);
+    Assert.assertTrue(hierarchList.size() == 1);
+    List<? extends Authorizable> hierarchy = hierarchList.get(0);
     Assert.assertNotNull(hierarchy);
     Assert.assertTrue(hierarchy.size() == 2);
     Assert.assertEquals(hierarchy.get(0).getName(), "hs2");
@@ -133,8 +143,11 @@ public class TestSentryAuthorizerUtil {
     Server server = new Server("hs2");
     HivePrivilegeObject privilege = new HivePrivilegeObject(
         HivePrivilegeObjectType.DFS_URI, null, "hdfs://path/to/file");
-    List<DBModelAuthorizable> hierarchy =
-        SentryAuthorizerUtil.convert2SentryPrivilege(server, privilege);
+    List<List<DBModelAuthorizable>> hierarchList =
+        SentryAuthorizerUtil.getAuthzHierarchy(server, privilege);
+    Assert.assertNotNull(hierarchList);
+    Assert.assertTrue(hierarchList.size() == 1);
+    List<? extends Authorizable> hierarchy = hierarchList.get(0);
     Assert.assertNotNull(hierarchy);
     Assert.assertTrue(hierarchy.size() == 2);
     Assert.assertEquals(hierarchy.get(0).getName(), "hs2");

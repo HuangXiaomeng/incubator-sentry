@@ -178,7 +178,7 @@ public interface SentryPolicyServiceClient {
    * @param privInfo
    * @throws SentryUserException
    */
-  public void grantPrivilege(String requestorUserName, String roleName, PrivilegeInfo privInfo)
+  public TSentryPrivilege grantPrivilege(String requestorUserName, String roleName, PrivilegeInfo privInfo)
       throws SentryUserException;
 
   /**
