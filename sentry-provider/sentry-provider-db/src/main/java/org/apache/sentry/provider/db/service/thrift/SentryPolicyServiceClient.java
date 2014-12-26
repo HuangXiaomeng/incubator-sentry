@@ -25,6 +25,7 @@ import java.util.Set;
 import org.apache.sentry.SentryUserException;
 import org.apache.sentry.core.common.ActiveRoleSet;
 import org.apache.sentry.core.common.Authorizable;
+import org.apache.sentry.core.model.db.PrivilegeInfo;
 
 public interface SentryPolicyServiceClient {
 
@@ -43,7 +44,7 @@ public interface SentryPolicyServiceClient {
 
   /**
    * Gets sentry privilege objects for a given roleName using the Sentry service
-   * 
+   *
    * @param requestorUserName : user on whose behalf the request is issued
    * @param roleName : roleName to look up
    * @param authorizable : authorizable Hierarchy (server->db->table etc)
@@ -160,13 +161,36 @@ public interface SentryPolicyServiceClient {
    * Returns the configuration value in the sentry server associated with propertyName, or if
    * propertyName does not exist, the defaultValue. There is no "requestorUserName" because this is
    * regarded as an internal interface.
-   * 
+   *
    * @param propertyName Config attribute to search for
    * @param defaultValue String to return if not found
    * @return The value of the propertyName
    * @throws SentryUserException
    */
   public String getConfigValue(String propertyName, String defaultValue) throws SentryUserException;
+
+
+  /**
+   * Grant wrapped privilege information to SentryStore for V2
+   *
+   * @param requestorUserName
+   * @param roleName
+   * @param privInfo
+   * @throws SentryUserException
+   */
+  public void grantPrivilege(String requestorUserName, String roleName, PrivilegeInfo privInfo)
+      throws SentryUserException;
+
+  /**
+   * Revoke privilege from SentryStore to SentryStore for V2
+   *
+   * @param requestorUserName
+   * @param roleName
+   * @param privInfo
+   * @throws SentryUserException
+   */
+  public void revokePrivilege(String requestorUserName, String roleName, PrivilegeInfo privInfo)
+      throws SentryUserException;
 
   public void close();
 }
