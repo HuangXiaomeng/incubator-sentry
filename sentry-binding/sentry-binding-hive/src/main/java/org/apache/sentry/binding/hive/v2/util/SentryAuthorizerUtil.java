@@ -25,9 +25,12 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.common.JavaUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.metastore.api.PrincipalType;
+import org.apache.hadoop.hive.ql.hooks.Hook;
 import org.apache.hadoop.hive.ql.metadata.AuthorizationException;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
@@ -41,6 +44,9 @@ import org.apache.hadoop.hive.ql.security.authorization.plugin.HivePrivilegeObje
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HivePrivilegeObject.HivePrivilegeObjectType;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveRoleGrant;
 import org.apache.hadoop.hive.ql.session.SessionState;
+import org.apache.sentry.binding.hive.SentryOnFailureHook;
+import org.apache.sentry.binding.hive.SentryOnFailureHookContext;
+import org.apache.sentry.binding.hive.conf.HiveAuthzConf;
 import org.apache.sentry.core.common.utils.PathUtils;
 import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.core.model.db.AccessURI;
@@ -53,6 +59,8 @@ import org.apache.sentry.provider.db.service.thrift.TSentryGrantOption;
 import org.apache.sentry.provider.db.service.thrift.TSentryPrivilege;
 import org.apache.sentry.provider.db.service.thrift.TSentryRole;
 import org.apache.sentry.service.thrift.ServiceConstants.PrivilegeScope;
+
+import com.google.common.base.Splitter;
 
 public class SentryAuthorizerUtil {
   public static final Log LOG = LogFactory.getLog(SentryAuthorizerUtil.class);
@@ -288,5 +296,70 @@ public class SentryAuthorizerUtil {
     hiveRoleGrant.setGrantor(role.getGrantorPrincipal());
     hiveRoleGrant.setGrantorType(PrincipalType.USER.name());
     return hiveRoleGrant;
+  }
+
+  /**
+   * Execute on failure hooks for e2e tests
+   *
+   * @param context
+   * @param conf
+   * @param hiveOp
+   */
+  public static void executeOnFailureHooks(SentryOnFailureHookContext hookCtx, Configuration conf) {
+    String csHooks = conf.get(HiveAuthzConf.AuthzConfVars.AUTHZ_ONFAILURE_HOOKS.getVar(), "").trim();
+
+    try {
+      for (Hook aofh : SentryAuthorizerUtil.getHooks(csHooks)) {
+        ((SentryOnFailureHook)aofh).run(hookCtx);
+      }
+    } catch (Exception ex) {
+      LOG.error("Error executing hook:", ex);
+    }
+  }
+
+  /**
+   * Returns a set of hooks specified in a configuration variable.
+   *
+   * See getHooks(HiveAuthzConf.AuthzConfVars hookConfVar, Class<T> clazz)
+   * @param hookConfVar
+   * @return
+   * @throws Exception
+   */
+  public static List<Hook> getHooks(String csHooks) throws Exception {
+    return getHooks(csHooks, Hook.class);
+  }
+
+  /**
+   * Returns the hooks specified in a configuration variable.  The hooks are returned in a list in
+   * the order they were specified in the configuration variable.
+   *
+   * @param hookConfVar The configuration variable specifying a comma separated list of the hook
+   *                    class names.
+   * @param clazz       The super type of the hooks.
+   * @return            A list of the hooks cast as the type specified in clazz, in the order
+   *                    they are listed in the value of hookConfVar
+   * @throws Exception
+   */
+  public static <T extends Hook> List<T> getHooks(String csHooks,
+      Class<T> clazz)
+      throws Exception {
+
+    List<T> hooks = new ArrayList<T>();
+    if (csHooks.isEmpty()) {
+      return hooks;
+    }
+    for (String hookClass : Splitter.on(",").omitEmptyStrings().trimResults().split(csHooks)) {
+      try {
+        @SuppressWarnings("unchecked")
+        T hook =
+            (T) Class.forName(hookClass, true, JavaUtils.getClassLoader()).newInstance();
+        hooks.add(hook);
+      } catch (ClassNotFoundException e) {
+        LOG.error(hookClass + " Class not found:" + e.getMessage());
+        throw e;
+      }
+    }
+
+    return hooks;
   }
 }

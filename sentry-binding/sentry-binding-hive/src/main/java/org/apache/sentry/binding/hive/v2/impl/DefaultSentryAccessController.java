@@ -27,6 +27,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hive.SentryHiveConstants;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
+import org.apache.hadoop.hive.ql.metadata.AuthorizationException;
+import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.hadoop.hive.ql.security.HiveAuthenticationProvider;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAuthzSessionContext;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAuthzSessionContext.CLIENT_TYPE;
@@ -36,8 +38,11 @@ import org.apache.hadoop.hive.ql.security.authorization.plugin.HivePrivilege;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HivePrivilegeInfo;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HivePrivilegeObject;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveRoleGrant;
+import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.sentry.SentryUserException;
 import org.apache.sentry.binding.hive.HiveAuthzBindingPreExecHook;
+import org.apache.sentry.binding.hive.SentryOnFailureHookContext;
+import org.apache.sentry.binding.hive.SentryOnFailureHookContextImpl;
 import org.apache.sentry.binding.hive.authz.HiveAuthzBinding;
 import org.apache.sentry.binding.hive.conf.HiveAuthzConf;
 import org.apache.sentry.binding.hive.v2.SentryAccessController;
@@ -49,6 +54,7 @@ import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.core.model.db.DBModelAuthorizable;
 import org.apache.sentry.core.model.db.PrivilegeInfo;
 import org.apache.sentry.core.model.db.Server;
+import org.apache.sentry.provider.db.SentryAccessDeniedException;
 import org.apache.sentry.provider.db.service.thrift.TSentryPrivilege;
 import org.apache.sentry.provider.db.service.thrift.TSentryRole;
 import org.apache.sentry.service.thrift.SentryServiceClientFactory;
@@ -114,6 +120,9 @@ public class DefaultSentryAccessController extends SentryAccessController {
         throw new SentryAccessControlException(msg, e);
       }
       sentryClient.createRole(authenticator.getUserName(), roleName);
+    } catch(SentryAccessDeniedException e) {
+      HiveOperation hiveOp = HiveOperation.CREATEROLE;
+      executeOnFailureHooks(hiveOp, e);
     } catch(SentryUserException e) {
       String msg = "Error when sentryClient create role: " + e.getMessage();
       LOG.error(msg, e);
@@ -140,6 +149,9 @@ public class DefaultSentryAccessController extends SentryAccessController {
         throw new SentryAccessControlException(msg, e);
       }
       sentryClient.dropRole(authenticator.getUserName(), roleName);
+    } catch(SentryAccessDeniedException e) {
+      HiveOperation hiveOp = HiveOperation.DROPROLE;
+      executeOnFailureHooks(hiveOp, e);
     } catch(SentryUserException e) {
       String msg = "Error when sentryClient drop role: " + e.getMessage();
       LOG.error(msg, e);
@@ -179,6 +191,9 @@ public class DefaultSentryAccessController extends SentryAccessController {
         throw new SentryAccessControlException(msg, e);
       }
       roles = SentryAuthorizerUtil.convert2RoleList(sentryClient.listRoles(authenticator.getUserName()));
+    } catch(SentryAccessDeniedException e) {
+      HiveOperation hiveOp = HiveOperation.SHOW_ROLES;
+      executeOnFailureHooks(hiveOp, e);
     } catch(SentryUserException e) {
       String msg = "Error when sentryClient listRoles: " + e.getMessage();
       LOG.error(msg, e);
@@ -225,6 +240,9 @@ public class DefaultSentryAccessController extends SentryAccessController {
           infoList.add(SentryAuthorizerUtil.convert2HivePrivilegeInfo(privilege, principal));
         }
       }
+    } catch(SentryAccessDeniedException e) {
+      HiveOperation hiveOp = HiveOperation.SHOW_GRANT;
+      executeOnFailureHooks(hiveOp, e);
     } catch(SentryUserException e) {
       String msg = "Error when sentryClient listPrivilegesByRoleName: " + e.getMessage();
       LOG.error(msg, e);
@@ -253,6 +271,9 @@ public class DefaultSentryAccessController extends SentryAccessController {
       }
 
       hiveAuthzBinding.setActiveRoleSet(roleName, sentryClient.listUserRoles(authenticator.getUserName()));
+    } catch(SentryAccessDeniedException e) {
+      HiveOperation hiveOp = HiveOperation.GRANT_ROLE;
+      executeOnFailureHooks(hiveOp, e);
     } catch(SentryUserException e) {
       String msg = "Error when sentryClient listUserRoles or hiveAuthzBinding setActiveRole" + e.getMessage();
       LOG.error(msg, e);
@@ -286,6 +307,9 @@ public class DefaultSentryAccessController extends SentryAccessController {
       } else {
         roles.addAll(roleSet.getRoles());
       }
+    } catch(SentryAccessDeniedException e) {
+      HiveOperation hiveOp = HiveOperation.SHOW_ROLES;
+      executeOnFailureHooks(hiveOp, e);
     } catch(SentryUserException e) {
       String msg = "Error when sentryClient listUserRoles: " + e.getMessage();
       LOG.error(msg, e);
@@ -331,6 +355,9 @@ public class DefaultSentryAccessController extends SentryAccessController {
           hiveRoleGrants.add(SentryAuthorizerUtil.convert2HiveRoleGrant(role));
         }
       }
+    } catch(SentryAccessDeniedException e) {
+      HiveOperation hiveOp = HiveOperation.SHOW_ROLE_GRANT;
+      executeOnFailureHooks(hiveOp, e);
     } catch(SentryUserException e) {
       String msg = "Error when sentryClient listRolesByGroupName: " + e.getMessage();
       LOG.error(msg, e);
@@ -504,6 +531,9 @@ public class DefaultSentryAccessController extends SentryAccessController {
           }
         }
       }
+    } catch(SentryAccessDeniedException e) {
+      HiveOperation hiveOp = isGrant? HiveOperation.GRANT_PRIVILEGE : HiveOperation.REVOKE_PRIVILEGE;
+      executeOnFailureHooks(hiveOp, e);
     } catch(SentryUserException e) {
       String msg = "Error when sentryClient grant/revoke privilege:" + e.getMessage();
       LOG.error(msg, e);
@@ -553,6 +583,9 @@ public class DefaultSentryAccessController extends SentryAccessController {
         }
       }
 
+    } catch(SentryAccessDeniedException e) {
+      HiveOperation hiveOp = isGrant? HiveOperation.GRANT_ROLE : HiveOperation.REVOKE_ROLE;
+      executeOnFailureHooks(hiveOp, e);
     } catch(SentryUserException e) {
       String msg = "Error when sentryClient grant/revoke role:" + e.getMessage();
       LOG.error(msg, e);
@@ -566,5 +599,14 @@ public class DefaultSentryAccessController extends SentryAccessController {
         sentryClient.close();
       }
     }
+  }
+
+  private void executeOnFailureHooks(HiveOperation hiveOp, SentryAccessDeniedException e) {
+    SentryOnFailureHookContext hookCtx = new SentryOnFailureHookContextImpl(
+        SessionState.get().getCmd(), null, null,
+        hiveOp, null, null, null, null, authenticator.getUserName(),
+        null, new AuthorizationException(e), authzConf);
+    SentryAuthorizerUtil.executeOnFailureHooks(hookCtx, authzConf);
+    throw new RuntimeException(e);
   }
 }

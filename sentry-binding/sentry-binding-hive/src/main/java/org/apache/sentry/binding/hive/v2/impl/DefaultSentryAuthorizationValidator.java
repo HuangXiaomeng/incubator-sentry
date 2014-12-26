@@ -32,6 +32,9 @@ import org.apache.hadoop.hive.ql.security.HiveAuthenticationProvider;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAuthzContext;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveOperationType;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HivePrivilegeObject;
+import org.apache.hadoop.hive.ql.session.SessionState;
+import org.apache.sentry.binding.hive.SentryOnFailureHookContext;
+import org.apache.sentry.binding.hive.SentryOnFailureHookContextImpl;
 import org.apache.sentry.binding.hive.authz.HiveAuthzBinding;
 import org.apache.sentry.binding.hive.authz.HiveAuthzBinding.HiveHook;
 import org.apache.sentry.binding.hive.authz.HiveAuthzPrivileges;
@@ -98,7 +101,19 @@ public class DefaultSentryAuthorizationValidator extends SentryAuthorizationVali
       hiveAuthzBinding.authorize(hiveOp, stmtAuthPrivileges, new Subject(authenticator.getUserName()),
           inputHierarchyList, outputHierarchyList);
     } catch (AuthorizationException e) {
-      throw new SentryAccessControlException(e);
+      SentryOnFailureHookContext hookCtx = new SentryOnFailureHookContextImpl(
+          context.getCommandString(), null, null,
+          hiveOp, null, null, null, null, authenticator.getUserName(),
+          context.getIpAddress(), e, authzConf);
+      SentryAuthorizerUtil.executeOnFailureHooks(hookCtx, authzConf);
+      String permsRequired = "";
+      for (String perm : hiveAuthzBinding.getLastQueryPrivilegeErrors()) {
+        permsRequired += perm + ";";
+      }
+      SessionState.get().getConf().set(HiveAuthzConf.HIVE_SENTRY_AUTH_ERRORS, permsRequired);
+      String msg = HiveAuthzConf.HIVE_SENTRY_PRIVILEGE_ERROR_MESSAGE + "\n Required privileges for this query: "
+          + permsRequired;
+      throw new SentryAccessControlException(msg, e);
     }
   }
 
