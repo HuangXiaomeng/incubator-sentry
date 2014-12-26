@@ -129,6 +129,7 @@ public abstract class AbstractTestWithStaticConfiguration {
   protected static Configuration sentryConf;
   protected static Context context;
   protected final String semanticException = "SemanticException No valid privileges";
+  protected final String SENTRY_ACCESS_CONTROLLER_EXCEPTION = "SentryAccessControlException";
 
 
   public static void createContext() throws Exception {
@@ -150,7 +151,7 @@ public abstract class AbstractTestWithStaticConfiguration {
     ArrayList<String> allowedDBs = new ArrayList<String>(Arrays.asList(DB1, DB2, DB3));
     for(String db : dbs) {
       assertTrue(db + " is not part of known test dbs which will be cleaned up after the test", allowedDBs.contains(db));
-      statement.execute("CREATE DATABASE " + db);
+      statement.execute("CREATE DATABASE if not exists " + db);
     }
     statement.close();
     connection.close();
@@ -324,12 +325,15 @@ public abstract class AbstractTestWithStaticConfiguration {
       if (columnName != null) {
         statement.execute("CREATE DATABASE IF NOT EXISTS " + dbName);
         statement.execute("USE " + dbName);
+        statement.execute("CREATE TABLE IF NOT EXISTS " + tableName + " ( " + columnName + " string) ");
         statement.execute("GRANT " + action + " ( " + columnName + " ) ON TABLE " + tableName + " TO ROLE " + roleName);
       } else if (tableName != null) {
         statement.execute("CREATE DATABASE IF NOT EXISTS " + dbName);
         statement.execute("USE " + dbName);
+        statement.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (c1 string) ");
         statement.execute("GRANT " + action + " ON TABLE " + tableName + " TO ROLE " + roleName);
       } else if (dbName != null) {
+        statement.execute("CREATE DATABASE IF NOT EXISTS " + dbName);
         statement.execute("GRANT " + action + " ON DATABASE " + dbName + " TO ROLE " + roleName);
       } else if (uriPath != null) {
         statement.execute("GRANT " + action + " ON URI '" + uriPath + "' TO ROLE " + roleName);//ALL?

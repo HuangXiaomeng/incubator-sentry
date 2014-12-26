@@ -17,8 +17,6 @@
 
 package org.apache.sentry.tests.e2e.hive;
 
-import org.apache.sentry.provider.file.PolicyFile;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -32,6 +30,7 @@ import java.sql.Statement;
 
 import junit.framework.Assert;
 
+import org.apache.sentry.provider.file.PolicyFile;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -86,9 +85,11 @@ public class TestPrivilegesAtTableScope extends AbstractTestWithStaticConfigurat
     Connection connection = context.createConnection(ADMIN1);
     Statement statement = context.createStatement(connection);
     statement.execute("USE DB_1");
+    statement.execute("DROP TABLE IF EXISTS TAB_1");
     statement.execute("CREATE TABLE TAB_1(A STRING)");
     statement.execute("LOAD DATA LOCAL INPATH '" + dataFile.getPath()
         + "' INTO TABLE TAB_1");
+    statement.execute("DROP TABLE IF EXISTS TAB_2");
     statement.execute("CREATE TABLE TAB_2(A STRING)");
     statement.execute("LOAD DATA LOCAL INPATH '" + dataFile.getPath()
         + "' INTO TABLE TAB_2");
@@ -180,10 +181,12 @@ public class TestPrivilegesAtTableScope extends AbstractTestWithStaticConfigurat
     Connection connection = context.createConnection(ADMIN1);
     Statement statement = context.createStatement(connection);
     statement.execute("USE " + DB1);
+    statement.execute("DROP TABLE IF EXISTS TAB_1");
     statement.execute("CREATE TABLE TAB_1(A STRING)");
     statement.execute("LOAD DATA LOCAL INPATH '" + dataFile.getPath()
         + "' INTO TABLE TAB_1");
     statement.execute("CREATE VIEW VIEW_1(A) AS SELECT A FROM TAB_1");
+    statement.execute("DROP TABLE IF EXISTS TAB_2");
     statement.execute("CREATE TABLE TAB_2(A STRING)");
     statement.execute("LOAD DATA LOCAL INPATH '" + dataFile.getPath()
         + "' INTO TABLE TAB_2");
@@ -267,10 +270,12 @@ public class TestPrivilegesAtTableScope extends AbstractTestWithStaticConfigurat
     Statement statement = context.createStatement(connection);
 
     statement.execute("USE " + DB1);
+    statement.execute("DROP TABLE IF EXISTS TAB_1");
     statement.execute("CREATE TABLE TAB_1(A STRING)");
     statement.execute("LOAD DATA LOCAL INPATH '" + dataFile.getPath()
         + "' INTO TABLE TAB_1");
     statement.execute("CREATE VIEW VIEW_1(A) AS SELECT A FROM TAB_1");
+    statement.execute("DROP TABLE IF EXISTS TAB_2");
     statement.execute("CREATE TABLE TAB_2(A STRING)");
     statement.execute("LOAD DATA LOCAL INPATH '" + dataFile.getPath()
         + "' INTO TABLE TAB_2");
@@ -353,11 +358,13 @@ public class TestPrivilegesAtTableScope extends AbstractTestWithStaticConfigurat
     Statement statement = context.createStatement(connection);
 
     statement.execute("USE " + DB1);
+    statement.execute("DROP TABLE IF EXISTS TAB_1");
     statement.execute("CREATE TABLE TAB_1(B INT, A STRING) "
         + " row format delimited fields terminated by '|'  stored as textfile");
     statement.execute("LOAD DATA LOCAL INPATH '" + dataFile.getPath()
         + "' INTO TABLE TAB_1");
     statement.execute("CREATE VIEW VIEW_1 AS SELECT A, B FROM TAB_1");
+    statement.execute("DROP TABLE IF EXISTS TAB_2");
     statement.execute("CREATE TABLE TAB_2(B INT, A STRING) "
         + " row format delimited fields terminated by '|'  stored as textfile");
     statement.execute("LOAD DATA LOCAL INPATH '" + dataFile.getPath()

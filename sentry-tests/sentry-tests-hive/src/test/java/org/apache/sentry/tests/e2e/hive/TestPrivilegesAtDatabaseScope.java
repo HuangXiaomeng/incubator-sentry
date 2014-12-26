@@ -17,7 +17,6 @@
 
 package org.apache.sentry.tests.e2e.hive;
 
-import org.apache.sentry.provider.file.PolicyFile;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -32,6 +31,7 @@ import java.util.Map;
 
 import junit.framework.Assert;
 
+import org.apache.sentry.provider.file.PolicyFile;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -68,7 +68,7 @@ public class TestPrivilegesAtDatabaseScope extends AbstractTestWithStaticConfigu
     // setup db objects needed by the test
     Connection connection = context.createConnection(ADMIN1);
     Statement statement = context.createStatement(connection);
-    statement.execute("create database " + DB1);
+    statement.execute("create database if not exists " + DB1);
     statement.execute("create table " + DB1 + ".tab1(a int)");
 
     connection = context.createConnection(USER1_1);
@@ -272,7 +272,9 @@ public class TestPrivilegesAtDatabaseScope extends AbstractTestWithStaticConfigu
 
     //negative test case: user can't execute alter table set location,
     // as the user does not have privileges on that location
-    context.assertSentrySemanticException(statement, "ALTER TABLE TAB_2 SET LOCATION 'file:///tab2'", semanticException);
+    context.assertSentrySemanticException(statement,
+        "ALTER TABLE TAB_2 SET LOCATION 'file:///tab2'",
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
 
     statement.close();
     connection.close();

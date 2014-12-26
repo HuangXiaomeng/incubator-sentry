@@ -117,6 +117,7 @@ public class TestDbDDLAuditLog extends AbstractTestWithStaticConfiguration {
     fieldValueMap.put(Constants.LOG_FIELD_ALLOWED, Constants.TRUE);
     assertAuditLog(fieldValueMap);
 
+    statement.execute("CREATE TABLE " + tableName + "(c1 string)");
     statement.execute("GRANT SELECT ON TABLE " + tableName + " TO ROLE " + roleName
         + " WITH GRANT OPTION");
     fieldValueMap.clear();
