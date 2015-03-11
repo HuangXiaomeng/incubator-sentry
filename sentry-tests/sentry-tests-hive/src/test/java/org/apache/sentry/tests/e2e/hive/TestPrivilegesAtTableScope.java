@@ -443,6 +443,8 @@ public class TestPrivilegesAtTableScope extends AbstractTestWithStaticConfigurat
     Connection connection = context.createConnection(ADMIN1);
     Statement statement = context.createStatement(connection);
 
+    statement.execute("DROP DATABASE IF EXISTS " + DB1  + " CASCADE");
+    statement.execute("CREATE DATABASE " + DB1);
     statement.execute("USE " + DB1);
     statement.execute("CREATE TABLE " + TBL1 + "(B INT, A STRING) "
         + " row format delimited fields terminated by '|'  stored as textfile");

@@ -205,7 +205,7 @@ public class TestDbPrivilegeCleanupOnDrop extends
     statement = context.createStatement(connection);
     statement.execute("USE " + DB1);
     statement.execute("ALTER TABLE t1 RENAME TO t2");
-    context.assertSentrySemanticException(statement, "drop table t1", semanticException);
+    context.assertSentrySemanticException(statement, "drop table t1", SENTRY_ACCESS_CONTROLLER_EXCEPTION);
 
     // After rename table t1 to t2, user_role should have permission to drop t2
     statement.execute("drop table t2");

@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.apache.sentry.provider.db.SentryAccessDeniedException;
@@ -187,6 +186,7 @@ public class TestDbEndToEnd extends AbstractTestWithStaticConfiguration {
     statement.execute("CREATE ROLE data_uri");
 
     statement.execute("USE " + DB2);
+    statement.execute("CREATE TABLE IF NOT EXISTS " + tableName1 + "(c1 string)");
     statement.execute("GRANT INSERT ON TABLE " + tableName1
         + " TO ROLE insert_tb1");
     statement.execute("GRANT INSERT ON TABLE " + tableName2
@@ -195,6 +195,7 @@ public class TestDbEndToEnd extends AbstractTestWithStaticConfiguration {
         + "' TO ROLE data_uri");
 
     statement.execute("USE " + DB1);
+    statement.execute("CREATE TABLE IF NOT EXISTS " + tableName1 + "(c1 string)");
     statement.execute("GRANT SELECT ON TABLE " + tableName1
         + " TO ROLE select_tb1");
 

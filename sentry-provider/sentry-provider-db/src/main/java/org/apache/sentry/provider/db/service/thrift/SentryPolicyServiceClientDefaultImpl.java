@@ -21,6 +21,7 @@ package org.apache.sentry.provider.db.service.thrift;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.PrivilegedExceptionAction;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +39,7 @@ import org.apache.sentry.core.common.ActiveRoleSet;
 import org.apache.sentry.core.common.Authorizable;
 import org.apache.sentry.core.model.db.AccessConstants;
 import org.apache.sentry.core.model.db.DBModelAuthorizable;
+import org.apache.sentry.core.model.db.PrivilegeInfo;
 import org.apache.sentry.service.thrift.ServiceConstants.ClientConfig;
 import org.apache.sentry.service.thrift.ServiceConstants.PrivilegeScope;
 import org.apache.sentry.service.thrift.ServiceConstants.ServerConfig;
@@ -66,7 +68,7 @@ public class SentryPolicyServiceClientDefaultImpl implements SentryPolicyService
   private final InetSocketAddress serverAddress;
   private final boolean kerberos;
   private final String[] serverPrincipalParts;
-  private SentryPolicyService.Client client;
+  protected SentryPolicyService.Client client;
   private TTransport transport;
   private int connectionTimeout;
   private static final Logger LOGGER = LoggerFactory
@@ -626,7 +628,7 @@ public class SentryPolicyServiceClientDefaultImpl implements SentryPolicyService
     return setBuilder.build();
   }
 
-  private TSentryGrantOption convertTSentryGrantOption(Boolean grantOption) {
+  protected TSentryGrantOption convertTSentryGrantOption(Boolean grantOption) {
     if (grantOption == null) {
       return TSentryGrantOption.UNSET;
     } else if (grantOption.equals(true)) {
@@ -798,6 +800,66 @@ public class SentryPolicyServiceClientDefaultImpl implements SentryPolicyService
     } catch (TException e) {
       throw new SentryUserException(THRIFT_EXCEPTION_MESSAGE, e);
     }
+  }
+
+  public TSentryPrivilege grantPrivilege(String requestorUserName, String roleName, PrivilegeInfo privInfo)
+      throws SentryUserException {
+    TAlterSentryRoleGrantPrivilegeRequest request = new TAlterSentryRoleGrantPrivilegeRequest();
+    request.setProtocol_version(ThriftConstants.TSENTRY_SERVICE_VERSION_CURRENT);
+    request.setRequestorUserName(requestorUserName);
+    request.setRoleName(roleName);
+    Set<TSentryPrivilege> privileges = convert2TSentryPrivilege(privInfo);
+    request.setPrivileges(privileges);
+    try {
+      TAlterSentryRoleGrantPrivilegeResponse response = client.alter_sentry_role_grant_privilege(request);
+      Status.throwIfNotOk(response.getStatus());
+      if (response.isSetPrivileges() && response.getPrivilegesSize() >0 ) {
+        return response.getPrivileges().iterator().next();
+      } else {
+        return new TSentryPrivilege();
+      }
+    } catch (TException e) {
+      throw new SentryUserException(THRIFT_EXCEPTION_MESSAGE, e);
+    }
+  }
+
+  public void revokePrivilege(String requestorUserName, String roleName, PrivilegeInfo privInfo)
+      throws SentryUserException {
+    TAlterSentryRoleRevokePrivilegeRequest request = new TAlterSentryRoleRevokePrivilegeRequest();
+    request.setProtocol_version(ThriftConstants.TSENTRY_SERVICE_VERSION_CURRENT);
+    request.setRequestorUserName(requestorUserName);
+    request.setRoleName(roleName);
+    Set<TSentryPrivilege> privileges = convert2TSentryPrivilege(privInfo);
+    request.setPrivileges(privileges);
+    try {
+      TAlterSentryRoleRevokePrivilegeResponse response = client.alter_sentry_role_revoke_privilege(request);
+      Status.throwIfNotOk(response.getStatus());
+    } catch (TException e) {
+      throw new SentryUserException(THRIFT_EXCEPTION_MESSAGE, e);
+    }
+  }
+
+  private Set<TSentryPrivilege> convert2TSentryPrivilege(PrivilegeInfo privInfo) {
+    TSentryPrivilege basePrivilege = new TSentryPrivilege();
+    basePrivilege.setPrivilegeScope(privInfo.getPrivilegeScope());
+    basePrivilege.setServerName(privInfo.getServerName());
+    basePrivilege.setURI(privInfo.getURI());
+    basePrivilege.setDbName(privInfo.getDbName());
+    basePrivilege.setTableName(privInfo.getTableOrViewName());
+    basePrivilege.setAction(privInfo.getAction());
+    basePrivilege.setCreateTime(System.currentTimeMillis());
+    basePrivilege.setGrantOption(convertTSentryGrantOption(privInfo.getGrantOption()));
+    Set<TSentryPrivilege> privileges = new HashSet<TSentryPrivilege>();
+    if (privInfo != null && privInfo.getColumns() != null) {
+      for (String columnName : privInfo.getColumns()) {
+        TSentryPrivilege columnPrivilege = new TSentryPrivilege(basePrivilege);
+        columnPrivilege.setColumnName(columnName);
+        privileges.add(columnPrivilege);
+      }
+    } else {
+      privileges.add(basePrivilege);
+    }
+    return privileges;
   }
 
   public void close() {

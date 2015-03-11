@@ -31,9 +31,7 @@ import junit.framework.Assert;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.sentry.binding.hive.conf.HiveAuthzConf;
 import org.apache.sentry.provider.db.SentryAccessDeniedException;
-import org.apache.sentry.provider.file.PolicyFile;
 import org.apache.sentry.tests.e2e.hive.DummySentryOnFailureHook;
-import org.apache.sentry.tests.e2e.hive.StaticUserGroup;
 import org.apache.sentry.tests.e2e.hive.hiveserver.HiveServerFactory;
 import org.junit.Assume;
 import org.junit.Before;
@@ -90,6 +88,7 @@ public class TestDbSentryOnFailureHookLoading extends AbstractTestWithDbProvider
     statement.execute("CREATE TABLE db_2.tab1(a int )");
 
     statement.execute("USE db_2");
+    statement.execute("CREATE TABLE IF NOT EXISTS tab2(c1 STRING)");
     statement.execute("GRANT SELECT ON TABLE tab2 TO ROLE read_db2_tab2");// To give user1 privilege to do USE db_2
     statement.close();
     connection.close();
@@ -99,10 +98,10 @@ public class TestDbSentryOnFailureHookLoading extends AbstractTestWithDbProvider
     statement = context.createStatement(connection);
 
     // Failure hook for create table when table doesnt exist
-    verifyFailureHook(statement, "CREATE TABLE DB_2.TAB2(id INT)", HiveOperation.CREATETABLE, "db_2", null, false);
+    verifyFailureHook(statement, "CREATE TABLE DB_2.TAB2(id INT)", HiveOperation.CREATETABLE, null, null, false);
 
     // Failure hook for create table when table exist
-    verifyFailureHook(statement, "CREATE TABLE DB_2.TAB1(id INT)", HiveOperation.CREATETABLE, "db_2", null, false);
+    verifyFailureHook(statement, "CREATE TABLE DB_2.TAB1(id INT)", HiveOperation.CREATETABLE, null, null, false);
 
     // Failure hook for select * from table when table exist
     verifyFailureHook(statement, "select * from db_2.tab1", HiveOperation.QUERY,
@@ -111,7 +110,7 @@ public class TestDbSentryOnFailureHookLoading extends AbstractTestWithDbProvider
     //Denied alter table invokes failure hook
     statement.execute("USE DB_2");
     verifyFailureHook(statement, "ALTER TABLE tab1 CHANGE id id1 INT", HiveOperation.ALTERTABLE_RENAMECOL,
-        "db_2", null, false);
+        null, null, false);
 
     statement.close();
     connection.close();
@@ -187,22 +186,23 @@ public class TestDbSentryOnFailureHookLoading extends AbstractTestWithDbProvider
     //Should pass as user1_1 is granted role all_db1
     statement.execute("SHOW GRANT role all_db1");
 
-        //Grant privilege on table doesnt expose db and table objects
+    //Grant privilege on table doesn't expose db and table objects
+    statement.execute("CREATE TABLE if not exists tab1(c1 string)");
     verifyFailureHook(statement,
         "GRANT ALL ON TABLE tab1 TO ROLE admin_role",
         HiveOperation.GRANT_PRIVILEGE, null, null, true);
 
-    //Revoke privilege on table doesnt expose db and table objects
+    //Revoke privilege on table doesn't expose db and table objects
     verifyFailureHook(statement,
-        "REVOKE ALL ON TABLE server1 FROM ROLE admin_role",
+        "REVOKE ALL ON TABLE tab1 FROM ROLE admin_role",
         HiveOperation.REVOKE_PRIVILEGE, null, null, true);
 
-    //Grant privilege on database doesnt expose db and table objects
+    //Grant privilege on database doesn't expose db and table objects
     verifyFailureHook(statement,
         "GRANT ALL ON Database db_1 TO ROLE admin_role",
         HiveOperation.GRANT_PRIVILEGE, null, null, true);
 
-    //Revoke privilege on database doesnt expose db and table objects
+    //Revoke privilege on database doesn't expose db and table objects
     verifyFailureHook(statement,
         "REVOKE ALL ON Database db_1 FROM ROLE admin_role",
         HiveOperation.REVOKE_PRIVILEGE, null, null, true);

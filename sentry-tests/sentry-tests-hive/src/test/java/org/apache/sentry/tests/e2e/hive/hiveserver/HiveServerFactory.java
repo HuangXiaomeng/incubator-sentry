@@ -32,6 +32,8 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.sentry.binding.hive.conf.HiveAuthzConf;
 import org.apache.sentry.binding.hive.conf.HiveAuthzConf.AuthzConfVars;
+import org.apache.sentry.binding.hive.v2.HiveAuthzBindingSessionHookV2;
+import org.apache.sentry.binding.hive.v2.SentryAuthorizerFactory;
 import org.apache.sentry.provider.file.LocalGroupResourceAuthorizationProvider;
 import org.fest.reflect.core.Reflection;
 import org.junit.Assert;
@@ -39,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.io.Files;
 import com.google.common.io.Resources;
 
 public class HiveServerFactory {
@@ -227,7 +228,16 @@ public class HiveServerFactory {
 
     if(!properties.containsKey(HiveConf.ConfVars.HIVE_SERVER2_SESSION_HOOK.varname)) {
       hiveConf.set(HiveConf.ConfVars.HIVE_SERVER2_SESSION_HOOK.varname,
-        "org.apache.sentry.binding.hive.HiveAuthzBindingSessionHook");
+          HiveAuthzBindingSessionHookV2.class.getName());
+    }
+    switch (type) {
+      case EmbeddedHiveServer2:
+      case InternalHiveServer2:
+      case ExternalHiveServer2:
+        // authorization V2 is userd for hiveserver2
+        hiveConf.setBoolean(HiveConf.ConfVars.HIVE_AUTHORIZATION_ENABLED.varname, true);
+        hiveConf.setVar(ConfVars.HIVE_AUTHORIZATION_MANAGER, SentryAuthorizerFactory.class.getName());
+      default:
     }
     hiveConf.set(HIVESERVER2_IMPERSONATION, "false");
     out = new FileOutputStream(hiveSite);

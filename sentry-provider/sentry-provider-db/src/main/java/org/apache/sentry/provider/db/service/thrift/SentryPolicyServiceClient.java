@@ -25,6 +25,7 @@ import java.util.Set;
 import org.apache.sentry.SentryUserException;
 import org.apache.sentry.core.common.ActiveRoleSet;
 import org.apache.sentry.core.common.Authorizable;
+import org.apache.sentry.core.model.db.PrivilegeInfo;
 
 public interface SentryPolicyServiceClient {
 
@@ -173,6 +174,29 @@ public interface SentryPolicyServiceClient {
    * @throws SentryUserException
    */
   public String getConfigValue(String propertyName, String defaultValue) throws SentryUserException;
+
+
+  /**
+   * Grant wrapped privilege information to SentryStore for V2
+   *
+   * @param requestorUserName
+   * @param roleName
+   * @param privInfo
+   * @throws SentryUserException
+   */
+  public TSentryPrivilege grantPrivilege(String requestorUserName, String roleName, PrivilegeInfo privInfo)
+      throws SentryUserException;
+
+  /**
+   * Revoke privilege from SentryStore to SentryStore for V2
+   *
+   * @param requestorUserName
+   * @param roleName
+   * @param privInfo
+   * @throws SentryUserException
+   */
+  public void revokePrivilege(String requestorUserName, String roleName, PrivilegeInfo privInfo)
+      throws SentryUserException;
 
   public void close();
 }

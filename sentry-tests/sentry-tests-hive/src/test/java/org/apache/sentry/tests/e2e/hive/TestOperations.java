@@ -18,6 +18,8 @@
 
 package org.apache.sentry.tests.e2e.hive;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.sql.Connection;
@@ -27,7 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.sentry.provider.file.PolicyFile;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -125,7 +126,9 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
 
     connection = context.createConnection(USER2_1);
     statement = context.createStatement(connection);
-    context.assertSentrySemanticException(statement, "CREATE database " + DB1, semanticException);
+    context.assertSentrySemanticException(statement,
+        "CREATE database " + DB1,
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     statement.close();
     connection.close();
 
@@ -166,7 +169,9 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
 
     connection = context.createConnection(USER3_1);
     statement = context.createStatement(connection);
-    context.assertSentrySemanticException(statement, "CREATE TABLE " + DB1 + ".tb1(a int)", semanticException);
+    context.assertSentrySemanticException(statement,
+        "CREATE TABLE " + DB1 + ".tb1(a int)",
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     statement.close();
     connection.close();
   }
@@ -212,7 +217,9 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
 
     connection = context.createConnection(USER3_1);
     statement = context.createStatement(connection);
-    context.assertSentrySemanticException(statement, "drop database " + DB1, semanticException);
+    context.assertSentrySemanticException(statement,
+        "drop database " + DB1,
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     statement.close();
     connection.close();
   }
@@ -249,7 +256,9 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
 
     connection = context.createConnection(USER3_1);
     statement = context.createStatement(connection);
-    context.assertSentrySemanticException(statement, "ALTER DATABASE " + DB1 + " SET DBPROPERTIES ('comment'='comment')", semanticException);
+    context.assertSentrySemanticException(statement,
+        "ALTER DATABASE " + DB1 + " SET DBPROPERTIES ('comment'='comment')",
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     statement.close();
     connection.close();
   }
@@ -286,14 +295,16 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     writePolicyFile(policyFile);
     connection = context.createConnection(USER3_1);
     statement = context.createStatement(connection);
-    context.assertSentrySemanticException(statement, "describe database " + DB1, semanticException);
+    context.assertSentrySemanticException(statement,
+        "describe database " + DB1,
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     statement.close();
     connection.close();
 
   }
 
   private void assertSemanticException(Statement stmt, String command) throws SQLException{
-    context.assertSentrySemanticException(stmt,command, semanticException);
+    context.assertSentrySemanticException(stmt,command, SENTRY_ACCESS_CONTROLLER_EXCEPTION);
   }
 
   /*
@@ -348,7 +359,10 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     statement.executeQuery("SHOW indexes on tb1");
     statement.executeQuery("SHOW COLUMNS from tb1");
     statement.executeQuery("SHOW functions '.*'");
+    /*
+     * TODO now V2 don't support "Show Table/Partition Extended"
     statement.executeQuery("SHOW TABLE EXTENDED IN " + DB1 + " LIKE 'tb*'");
+    */
 
     statement.executeQuery("DESCRIBE tb1");
     statement.executeQuery("DESCRIBE tb1 PARTITION (b=1)");
@@ -365,10 +379,13 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     connection = context.createConnection(USER3_1);
     statement = context.createStatement(connection);
     statement.execute("Use " + DB1);
-    context.assertSentrySemanticException(statement, "select * from tb1", semanticException);
     context.assertSentrySemanticException(statement,
-        "SHOW TABLE EXTENDED IN " + DB2 + " LIKE 'tb*'", semanticException);
-
+        "select * from tb1",
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
+    /*
+     * TODO now V2 don't support "Show Table/Partition Extended"
+    context.assertSentrySemanticException(statement, "SHOW TABLE EXTENDED IN " + DB2 + " LIKE 'tb*'", semanticException);
+    */
     statement.close();
     connection.close();
 
@@ -407,7 +424,10 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     statement.executeQuery("SHOW COLUMNS from tb1");
     statement.executeQuery("SHOW functions '.*'");
     //statement.executeQuery("SHOW LOCKS tb1");
+    /*
+     * TODO now V2 don't support "Show Table/Partition Extended"
     statement.executeQuery("SHOW TABLE EXTENDED IN " + DB1 + " LIKE 'tb*'");
+    */
 
     //NoViableAltException
     //statement.executeQuery("SHOW transactions");
@@ -461,7 +481,7 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     statement.execute("Use " + DB1);
     statement.execute("ALTER TABLE tb1 ADD IF NOT EXISTS PARTITION (b = '10') ");
     statement.execute("ALTER TABLE tb1 ADD IF NOT EXISTS PARTITION (b = '1') ");
-    statement.execute("CREATE TABLE ptab (a int) STORED AS PARQUET");
+    statement.execute("CREATE TABLE if not exists ptab (a int) STORED AS PARQUET");
     //Negative test cases
     connection = context.createConnection(USER2_1);
     statement = context.createStatement(connection);
@@ -733,10 +753,10 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     statement = context.createStatement(connection);
     statement.execute("Use " + DB1);
     context.assertSentrySemanticException(statement, "ALTER TABLE tb1 SET LOCATION '" + tabLocation + "'",
-        semanticException);
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     context.assertSentrySemanticException(statement,
         "ALTER TABLE tb1 ADD IF NOT EXISTS PARTITION (b = '3') LOCATION '" + tabLocation + "/part'",
-        semanticException);
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     statement.close();
     connection.close();
 
@@ -790,7 +810,7 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     statement = context.createStatement(connection);
     statement.execute("Use " + DB2);
     context.assertSentrySemanticException(statement, "create view view1 as select a from " + DB1 + ".tb1",
-        semanticException);
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     statement.close();
     connection.close();
 
@@ -831,7 +851,7 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     statement = context.createStatement(connection);
     statement.execute("Use " + DB1);
     context.assertSentrySemanticException(statement, "export table tb1 to '" + location + "'",
-        semanticException);
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     statement.close();
     connection.close();
 
@@ -848,7 +868,7 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     statement = context.createStatement(connection);
     statement.execute("Use " + DB1);
     context.assertSentrySemanticException(statement, "import table tb2 from '" + location + "'",
-        semanticException);
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     statement.close();
     connection.close();
 
@@ -917,7 +937,7 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     statement.execute("Use " + DB2);
     statement.execute("create table tb2 as select a from " + DB1 + ".tb1" );
     context.assertSentrySemanticException(statement, "create table tb3 as select a from " + DB1 + ".view1",
-        semanticException);
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
     statement.close();
     connection.close();
 
@@ -926,7 +946,7 @@ public class TestOperations extends AbstractTestWithStaticConfiguration {
     statement.execute("Use " + DB2);
     statement.execute("create table tb3 as select a from " + DB1 + ".view1" );
     context.assertSentrySemanticException(statement, "create table tb4 as select a from " + DB1 + ".tb1",
-        semanticException);
+        SENTRY_ACCESS_CONTROLLER_EXCEPTION);
 
     statement.close();
     connection.close();

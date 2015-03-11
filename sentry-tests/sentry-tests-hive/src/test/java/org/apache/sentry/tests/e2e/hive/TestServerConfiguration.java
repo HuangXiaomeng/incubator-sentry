@@ -31,8 +31,9 @@ import java.util.Map;
 
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
-import org.apache.sentry.binding.hive.HiveAuthzBindingSessionHook;
 import org.apache.sentry.binding.hive.conf.HiveAuthzConf;
+import org.apache.sentry.binding.hive.v2.HiveAuthzBindingSessionHookV2;
+import org.apache.sentry.binding.hive.v2.SentryAuthorizerFactory;
 import org.apache.sentry.provider.file.PolicyFile;
 import org.apache.sentry.tests.e2e.hive.hiveserver.HiveServerFactory;
 import org.junit.After;
@@ -171,14 +172,19 @@ public class TestServerConfiguration extends AbstractTestWithHiveServer {
 
     String testUser = USER1_1;
     // verify the config is set correctly by session hook
-    verifyConfig(testUser, ConfVars.SEMANTIC_ANALYZER_HOOK.varname,
-        HiveAuthzBindingSessionHook.SEMANTIC_HOOK);
+    verifyConfig(testUser, ConfVars.HIVE_AUTHORIZATION_ENABLED.varname, "true");
+    verifyConfig(testUser, ConfVars.HIVE_SERVER2_ENABLE_DOAS.varname, "false");
+    verifyConfig(testUser, ConfVars.HIVE_AUTHENTICATOR_MANAGER.varname,
+        "org.apache.hadoop.hive.ql.security.SessionStateUserAuthenticator");
+    verifyConfig(testUser, ConfVars.HIVE_AUTHORIZATION_MANAGER.varname,
+        SentryAuthorizerFactory.class.getName());
     verifyConfig(testUser, ConfVars.HIVE_CAPTURE_TRANSFORM_ENTITY.varname,
         "true");
     verifyConfig(testUser, ConfVars.HIVE_SECURITY_COMMAND_WHITELIST.varname, "set");
-    verifyConfig(testUser, ConfVars.SCRATCHDIRPERMISSION.varname, HiveAuthzBindingSessionHook.SCRATCH_DIR_PERMISSIONS);
+    verifyConfig(testUser, ConfVars.SCRATCHDIRPERMISSION.varname,
+        HiveAuthzBindingSessionHookV2.SCRATCH_DIR_PERMISSIONS);
     verifyConfig(testUser, HiveConf.ConfVars.HIVE_CONF_RESTRICTED_LIST.varname,
-        HiveAuthzBindingSessionHook.ACCESS_RESTRICT_LIST);
+        HiveAuthzBindingSessionHookV2.ACCESS_RESTRICT_LIST);
     verifyConfig(testUser, HiveAuthzConf.HIVE_ACCESS_SUBJECT_NAME, testUser);
    }
 

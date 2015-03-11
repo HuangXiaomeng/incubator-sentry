@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 import junit.framework.Assert;
 
@@ -41,7 +40,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
-import org.apache.sentry.binding.hive.SentryHiveAuthorizationTaskFactoryImpl;
+import org.apache.sentry.binding.hive.v2.impl.SentryAuthorizationTaskFactoryImplV2;
 import org.apache.sentry.binding.metastore.SentryMetastorePostEventListener;
 import org.apache.sentry.core.model.db.DBModelAction;
 import org.apache.sentry.core.model.db.DBModelAuthorizable;
@@ -56,9 +55,9 @@ import org.apache.sentry.tests.e2e.hive.fs.DFS;
 import org.apache.sentry.tests.e2e.hive.fs.DFSFactory;
 import org.apache.sentry.tests.e2e.hive.hiveserver.HiveServer;
 import org.apache.sentry.tests.e2e.hive.hiveserver.HiveServerFactory;
+import org.apache.sentry.tests.e2e.minisentry.SentrySrv;
 import org.apache.sentry.tests.e2e.minisentry.SentrySrvFactory;
 import org.apache.sentry.tests.e2e.minisentry.SentrySrvFactory.SentrySrvType;
-import org.apache.sentry.tests.e2e.minisentry.SentrySrv;
 import org.apache.tools.ant.util.StringUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -134,7 +133,7 @@ public abstract class AbstractTestWithStaticConfiguration {
   protected static boolean enableSentryHA = false;
   protected static Context context;
   protected final String semanticException = "SemanticException No valid privileges";
-
+  protected final String SENTRY_ACCESS_CONTROLLER_EXCEPTION = "SentryAccessControlException";
 
   public static void createContext() throws Exception {
     context = new Context(hiveServer, fileSystem,
@@ -155,7 +154,7 @@ public abstract class AbstractTestWithStaticConfiguration {
     ArrayList<String> allowedDBs = new ArrayList<String>(Arrays.asList(DB1, DB2, DB3));
     for(String db : dbs) {
       assertTrue(db + " is not part of known test dbs which will be cleaned up after the test", allowedDBs.contains(db));
-      statement.execute("CREATE DATABASE " + db);
+      statement.execute("CREATE DATABASE if not exists " + db);
     }
     statement.close();
     connection.close();
@@ -340,12 +339,15 @@ public abstract class AbstractTestWithStaticConfiguration {
       if (columnName != null) {
         statement.execute("CREATE DATABASE IF NOT EXISTS " + dbName);
         statement.execute("USE " + dbName);
+        statement.execute("CREATE TABLE IF NOT EXISTS " + tableName + " ( " + columnName + " string) ");
         statement.execute("GRANT " + action + " ( " + columnName + " ) ON TABLE " + tableName + " TO ROLE " + roleName);
       } else if (tableName != null) {
         statement.execute("CREATE DATABASE IF NOT EXISTS " + dbName);
         statement.execute("USE " + dbName);
+        statement.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (c1 string) ");
         statement.execute("GRANT " + action + " ON TABLE " + tableName + " TO ROLE " + roleName);
       } else if (dbName != null) {
+        statement.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (c1 string) ");
         statement.execute("GRANT " + action + " ON DATABASE " + dbName + " TO ROLE " + roleName);
       } else if (uriPath != null) {
         statement.execute("GRANT " + action + " ON URI '" + uriPath + "' TO ROLE " + roleName);//ALL?
@@ -363,7 +365,7 @@ public abstract class AbstractTestWithStaticConfiguration {
     properties.put(HiveServerFactory.AUTHZ_PROVIDER_BACKEND,
         SimpleDBProviderBackend.class.getName());
     properties.put(ConfVars.HIVE_AUTHORIZATION_TASK_FACTORY.varname,
-        SentryHiveAuthorizationTaskFactoryImpl.class.getName());
+        SentryAuthorizationTaskFactoryImplV2.class.getName());
     properties
     .put(ConfVars.HIVE_SERVER2_THRIFT_MIN_WORKER_THREADS.varname, "2");
     properties.put(ServerConfig.SECURITY_MODE, ServerConfig.SECURITY_MODE_NONE);
